@@ -40,6 +40,18 @@ G.LevelUp = (() => {
     }
 
     const move = pl.activeMove();
+    if (move) {
+      const next = G.Moves.nextUpText(move);
+      if (next) {
+        add({
+          w: 10, type: 'up', key: 'move-level:' + move.id, icon: 'move:' + move.id,
+          color: G.U.TYPE_COLOR[move.type], tag: 'Ataque',
+          title: `${move.name} · Nv. ${move.lvl + 1}`,
+          desc: next,
+          apply: () => { G.Moves.levelUp(move); }
+        });
+      }
+    }
     if (move && RANGED.has(move.kind)) {
       if ((pl.projectileBonus || 0) < 5) {
         add({

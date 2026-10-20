@@ -2,6 +2,49 @@
 G.RunUI = (() => {
   const $ = G.UI.$;
   let offers = null, offerCb = null, coopMode = false;
+  let initialMoves = null, initialMoveCb = null;
+
+  function showInitialMove(mon, list, cb) {
+    initialMoves = list;
+    initialMoveCb = cb;
+    $('start-move-sub').textContent = `${mon.name} · Elige uno de sus movimientos compatibles por tipo y rareza.`;
+    const box = $('start-move-cards');
+    box.innerHTML = '';
+    list.forEach((m, i) => {
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.innerHTML =
+        `<div class="ico" style="background:${G.U.TYPE_COLOR[m.type]}33">${G.Icons.html('move:' + m.id, 32)}</div>
+         <div class="txt"><div class="nm">${m.name} <span class="tag-chip" style="background:${G.U.TYPE_COLOR[m.type]}">${G.U.TYPE_NAME[m.type]}</span></div>
+         <div class="ds">${m.desc}<br>Daño ${m.dmg || 0} · Recarga ${m.cd}s · ${m.kind}</div></div>
+         <div class="key">${i + 1}</div>`;
+      el.dataset.sfx = 'none';
+      el.onclick = () => pickInitialMove(i);
+      box.appendChild(el);
+    });
+    G.UI.show('scr-start-move');
+  }
+
+  function pickInitialMove(i) {
+    if (!initialMoves || !initialMoves[i]) return;
+    const cb = initialMoveCb, id = initialMoves[i].id;
+    initialMoves = null; initialMoveCb = null;
+    G.UI.hide('scr-start-move');
+    cb(id);
+  }
+
+  function showPassiveInfo(pl) {
+    const passive = G.PassiveData.get(pl.dex);
+    $('passive-title').textContent = passive ? passive.name : 'Pasiva no implementada';
+    $('passive-level').textContent = passive ? 'Nivel ' + passive.level : '—';
+    $('passive-desc').textContent = passive
+      ? passive.description
+      : 'Este Pokémon todavía no tiene una pasiva innata implementada.';
+    G.UI.show('scr-passive');
+  }
+
+  function closePassiveInfo() { G.UI.hide('scr-passive'); }
+  $('passive-close').onclick = closePassiveInfo;
 
   /** @param coop  en grupo: tras elegir, se queda esperando a los demás */
   function showLevelUp(level, list, cb, coop = false) {
@@ -215,5 +258,5 @@ G.RunUI = (() => {
     $('btn-quit').onclick = onQuit;
   }
 
-  return { showLevelUp, reroll, showItemChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause };
+  return { showInitialMove, pickInitialMove, showPassiveInfo, closePassiveInfo, showLevelUp, reroll, showItemChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause };
 })();

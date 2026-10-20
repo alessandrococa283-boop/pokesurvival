@@ -84,6 +84,10 @@ G.Player = class Player {
     this.passiveKills = 0;
     this.shieldHp = 0;
     this.shieldT = 0;
+    this.abilityCooldowns = { dash: 0, shield: 0, ultimate: 0 };
+    this.dashT = 0;
+    this.dashDir = [Math.cos(this.moveAngle), Math.sin(this.moveAngle)];
+    this.evolutionCount = 0;
   }
 
   /** Segundos que hay que estar junto a un compañero caído para levantarlo. */
@@ -124,39 +128,47 @@ G.Player = class Player {
     G.Sprites.preload([mon.dex], 8000, this.shiny);
   }
 
-  evolveAtLevel() {
-    const dex = this.dex === 1 && this.level >= 16 ? 2
-      : this.dex === 2 && this.level >= 32 ? 3 : 0;
-    if (!dex) return false;
+  evolveTo(dex) {
+    const evolution = G.EvolutionData.next(this.dex, this.level);
+    if (!evolution || evolution.to !== dex) return false;
     const mon = G.DEX_BY[dex];
     if (!mon) throw new Error('Falta la especie de evolución ' + dex);
+    const current = this.activeMove();
+    const keepCurrent = current &&
+      G.Moves.availableFor(mon).some(move => move.id === current.id);
     this.changeSpecies(mon);
-    const id = G.Moves.attackFor(mon);
-    this.moves = [G.Moves.instance(id)];
-    this.slots = [this.moves.slice()];
-    this.active = 0;
-    G.Projectiles.clearOrbs(this);
+    this.evolutionCount++;
+    if (!keepCurrent) {
+      this.moves = [G.Moves.instance(G.Moves.attackFor(mon))];
+      this.slots = [this.moves.slice()];
+      this.active = 0;
+      G.Projectiles.clearOrbs(this);
+    }
     G.FX.ring(this.x, this.y, 10, 130, '#ffd23f', 0.8, 6);
     G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#ffe14d', 32, 220);
     G.Audio.sfx('legend');
-    G.Progress.event('evolve', { dex });
+    G.Progress.event('pokemonEvolve', { from: evolution.from, dex });
     return true;
   }
 
   onLevelUp() {
-    this.evolveAtLevel();
+    const evolution = G.EvolutionData.next(this.dex, this.level);
+    if (evolution && !this.evolveTo(evolution.to)) {
+      throw new Error('No se pudo evolucionar al Pokémon ' + this.dex + ' al nivel ' + this.level);
+    }
     const heal = this.dex === 2 ? 0.02 : this.dex === 3 ? 0.03 : 0;
     if (heal) this.heal(this.maxHp * heal);
   }
 
   onEnemyDefeated(enemy) {
     this.passiveKills++;
-    if (this.dex === 3 && this.passiveKills % 20 === 0) {
-      this.shieldHp = this.maxHp * 0.04;
+    const passive = G.PassiveData.get(this.dex);
+    if (passive && passive.shieldEvery && this.passiveKills % passive.shieldEvery === 0) {
+      this.shieldHp = this.maxHp * passive.shieldRate;
       this.shieldT = 4;
       G.FX.ring(this.x, this.y, this.r, this.r * 3.2, '#82e8ff', 0.6, 4);
     }
-    if (this.dex === 3 && enemy.boss && !enemy.judge) this.heal(this.maxHp * 0.10);
+    if (passive && passive.bossHeal && enemy.boss && !enemy.judge) this.heal(this.maxHp * passive.bossHeal);
   }
 
   // ---------------- movimientos ----------------
@@ -339,11 +351,15 @@ G.Player = class Player {
     if (got >= 1) G.FX.dmgText(this.x, this.y - this.bodyH - 6, '+' + got, '#5fe08a');
   }
 
-  addMaxHp(amount) { this.maxHp += amount; this.hp += amount; }
+  addMaxHp(amount) {
+    this.maxHp += amount;
+    this.hp += amount;
+    if (this.shieldT > 0) this.shieldHp = Math.min(this.shieldHp, this.maxHp * G.AbilityData.SHIELD.capacity);
+  }
 
   /** Devuelve cuántos niveles ha subido (pueden ser varios de golpe). */
   gainXp(amount) {
-    this.xp += amount * this.xpMul;
+    this.xp += amount * this.xpMul * G.AbilityData.xpMultiplier(G.Game.st.time);
     let leveled = 0;
     while (this.xp >= this.xpNext) {
       this.xp -= this.xpNext;
@@ -403,20 +419,22 @@ G.Player = class Player {
     if (this.power && (this.power.t -= dt) <= 0) { this.power.def.off(this); this.power = null; }
     if (this.regen > 0) this.hp = Math.min(this.maxHp, this.hp + this.regen * dt);
     if (this.shieldT > 0 && (this.shieldT -= dt) <= 0) this.shieldHp = 0;
-    const passiveRegen = this.dex === 1 ? 0.01 : this.dex === 2 ? 0.015 : this.dex === 3 ? 0.02 : 0;
-    if (passiveRegen) {
+    G.ActiveAbilities.update(this, dt);
+    const passive = G.PassiveData.get(this.dex);
+    if (passive && passive.regen) {
       this.passiveRegenT += dt;
-      while (this.passiveRegenT >= 5) {
-        this.passiveRegenT -= 5;
-        this.heal(this.maxHp * passiveRegen);
+      while (this.passiveRegenT >= passive.interval) {
+        this.passiveRegenT -= passive.interval;
+        this.heal(this.maxHp * passive.regen);
       }
     }
 
     // --- movimiento con colisiones ---
     // (En cooperativo la pausa no para el juego: sólo te quedas quieto.)
-    const [ax, ay] = this.frozen ? [0, 0] : G.Input.axis();
+    const [inputAx, inputAy] = this.frozen ? [0, 0] : G.Input.axis();
+    const { ax, ay, speed: dashSpeed } = G.ActiveAbilities.movement(this, inputAx, inputAy);
     this.walking = ax !== 0 || ay !== 0;
-    const s = this.spd;
+    const s = this.spd * dashSpeed;
     // Hielo: resbalas (la velocidad cambia despacio).
     const slide = this.inLiquid && G.World.liquidEffect(this.mon.types).slide;
     this.svx = slide ? G.U.damp(this.svx || 0, ax * s * 1.15, 1.6, dt) : ax * s;

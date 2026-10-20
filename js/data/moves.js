@@ -430,40 +430,70 @@
     return [...ids];
   }
 
+  function availableFor(mon) {
+    const rarity = rarityFor(mon);
+    const moves = poolFor(mon)
+      .map(id => BY_ID[id])
+      .filter(move => MOVE_RARITIES[move.type]?.[move.id]?.includes(rarity));
+    if (!moves.length) return [BY_ID[attackFor(mon)]];
+    return moves.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  }
+
   /**
    * Instancia de movimiento en una run: los números base de `def` con todas
    * las mejoras de la escalera hasta `lvl` ya aplicadas.
    */
   function instance(id, lvl = 1) {
     const def = BY_ID[id];
-    const s = Object.assign({}, def, { id, def, lvl, t: 0 });
+    const level = Number.isSafeInteger(lvl) && lvl > 0 ? Math.min(lvl, 10000) : 1;
+    const s = Object.assign({}, def, { id, def, lvl: 1, t: 0 });
     delete s.ups;
-    for (let i = 0; i < lvl - 1; i++) applyMods(s, def.ups[i].m);
+    while (s.lvl < level) levelUp(s);
     return s;
   }
 
   const MULT = ['dmg', 'cd', 'speed', 'radius', 'dur', 'amount', 'arc', 'width', 'spread', 'life', 'size', 'rate'];
   const ADD = ['count', 'pierce', 'stacks'];
+  const LIMITS = {
+    dmg: 1e7, cd: 0.06, speed: 1800, radius: 2400, dur: 120, amount: 100,
+    arc: 6.28, width: 240, spread: 6, life: 120, size: 64, rate: 0.06,
+    count: 64, pierce: 64, stacks: 32
+  };
 
-  function applyMods(s, m) {
+  function applyMods(s, m, scale = 1) {
     for (const k in m) {
-      if (MULT.includes(k) && s[k] != null) s[k] *= m[k];
-      else if (ADD.includes(k)) s[k] = (s[k] || 0) + m[k];
+      if (MULT.includes(k) && s[k] != null) s[k] *= 1 + (m[k] - 1) * scale;
+      else if (ADD.includes(k)) s[k] = (s[k] || 0) + m[k] * scale;
       else s[k] = m[k];
+      if (LIMITS[k] && Number.isFinite(s[k])) {
+        s[k] = k === 'cd' || k === 'rate'
+          ? Math.max(LIMITS[k], s[k])
+          : Math.min(LIMITS[k], Math.max(0, s[k]));
+      }
     }
+  }
+
+  function applyNextUpgrade(s) {
+    const count = s.def.ups.length;
+    const step = (s.lvl - 1) % count;
+    const repeat = Math.floor((s.lvl - 1) / count);
+    const scale = 1 / (1 + repeat * 0.12);
+    applyMods(s, s.def.ups[step].m, scale);
   }
 
   /** Sube de nivel una instancia ya creada. */
   function levelUp(s) {
-    if (s.lvl >= s.def.maxLvl) return false;
-    applyMods(s, s.def.ups[s.lvl - 1].m);
+    if (!Number.isSafeInteger(s.lvl) || s.lvl >= Number.MAX_SAFE_INTEGER) return false;
+    applyNextUpgrade(s);
     s.lvl++;
     return true;
   }
 
   /** Texto de la próxima mejora, para la carta de subida de nivel. */
   function nextUpText(s) {
-    return s.lvl >= s.def.maxLvl ? null : s.def.ups[s.lvl - 1].t;
+    const repeat = Math.floor((s.lvl - 1) / s.def.ups.length);
+    const step = s.def.ups[(s.lvl - 1) % s.def.ups.length];
+    return repeat ? `${step.t} (efecto reducido progresivamente)` : step.t;
   }
 
   const MOVE_RARITIES = {
@@ -628,6 +658,6 @@
     return true;
   }
 
-  G.Moves = { ALL: RAW, BY_ID, POOL, RARITIES: MOVE_RARITIES, poolFor, instance, levelUp, nextUpText, startFor, attackFor,
+  G.Moves = { ALL: RAW, BY_ID, POOL, RARITIES: MOVE_RARITIES, poolFor, availableFor, instance, levelUp, nextUpText, startFor, attackFor,
               EVO, NEED_NAME, evoInfo, evolve };
 })();

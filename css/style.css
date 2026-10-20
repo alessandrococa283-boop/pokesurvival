@@ -214,6 +214,19 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 .cell .no { position: absolute; top: 3px; left: 6px; font-size: 11px; color: var(--muted); }
 .cell .stars { font-size: 10px; letter-spacing: -1px; }
 .cell .partner { position: absolute; top: 3px; right: 5px; font-size: 12px; }
+.gym-medals-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+.gym-medal-cell { min-width: 0; cursor: default; }
+.gym-medal-cell:hover { transform: none; }
+.gym-medal-art { display: flex; align-items: center; justify-content: center; gap: 4px; height: 70px; margin: 5px 0 0; }
+.gym-leader-image { width: 54px; height: 66px; object-fit: contain; image-rendering: pixelated; }
+.gym-badge-image { width: 42px; height: 42px; object-fit: contain; image-rendering: pixelated; }
+.gym-leader-image.unearned { filter: brightness(0); opacity: .55; }
+.gym-badge-image.unearned { filter: grayscale(1) brightness(.35); opacity: .7; }
+.gym-medal-cell canvas { width: 58px; height: 52px; }
+.start-move-box { display: flex; flex-direction: column; gap: 8px; }
+.start-move-cards { max-height: min(62vh, 620px); overflow-y: auto; }
+.start-move-cards .card { min-height: 104px; }
+.start-move-cards .ds { line-height: 1.45; }
 
 .wide { width: min(980px, 100%); }
 .split { display: grid; grid-template-columns: 1fr 300px; gap: 18px; }

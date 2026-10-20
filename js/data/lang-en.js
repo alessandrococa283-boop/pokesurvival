@@ -9,6 +9,19 @@ G.I18n.add({
   'Fuego': 'Fire', 'Hada': 'Fairy', 'Hielo': 'Ice', 'Lucha': 'Fighting', 'Planta': 'Grass', 'Psíquico': 'Psychic',
   'Roca': 'Rock', 'Siniestro': 'Dark', 'Tierra': 'Ground', 'Veneno': 'Poison', 'Volador': 'Flying',
   'Teselia': 'Unova',
+  'Evolución': 'Evolution',
+  'evoluciona a': 'evolves into',
+  'Alcanzaste el nivel': 'You reached level',
+  'Elige qué hacer con tu ataque.': 'Choose what to do with your attack.',
+  'Conservar': 'Keep',
+  'Mantiene el nivel': 'Keeps it at level',
+  'y todas sus mejoras.': 'with all its upgrades.',
+  'Cambiar a': 'Switch to',
+  'El nuevo ataque empieza en el nivel 1.': 'The new attack starts at level 1.',
+  'Conservar mantiene todas las mejoras. Cambiar inicia el nuevo ataque en nivel 1.': 'Keeping it preserves all upgrades. Switching starts the new attack at level 1.',
+  'formas base de Pokémon de Kanto': 'base forms of Kanto Pokémon',
+  'forma base de Kanto': 'base form from Kanto',
+  'Aún no tienes una forma base de Kanto para jugar Historia.': 'You do not own a base form from Kanto for Story Mode yet.',
 
   // ---------------- movimientos ----------------
   'Ascuas': 'Ember', 'Lanzallamas': 'Flamethrower', 'Giro Fuego': 'Fire Spin', 'Onda Ígnea': 'Heat Wave', 'Llamarada': 'Fire Blast',
@@ -200,7 +213,7 @@ G.I18n.add({
   'Grieta · {x} m · {x} s': 'Rift · {x} m · {x} s', 'DERROTADOS ·': 'DEFEATED ·', 'MONEDAS': 'COINS',
   '{x} · {x} DERROTADOS · {x} MONEDAS': '{x} · {x} DEFEATED · {x} COINS',
   'Arrastra el dedo para moverte · toca un ataque para cambiarlo': 'Drag your finger to move · tap a move to switch',
-  'WASD moverse · 1-4 / Q / E o clic en un ataque para cambiarlo · Esc pausa': 'WASD move · 1-4 / Q / E or click a move to switch · Esc pause',
+  'WASD moverse · Espacio dash · Q escudo · R definitiva · E pasiva · Z/X cambia ataque · Esc pausa': 'WASD move · Space dash · Q shield · R ultimate · E passive · Z/X switch move · Esc pause',
   'El anfitrión ha terminado la partida': 'The host has ended the game', 'Se ha perdido la conexión con el anfitrión.': 'Lost connection to the host.',
 
   // ---------------- pausa y fin ----------------

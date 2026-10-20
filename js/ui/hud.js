@@ -82,7 +82,7 @@ G.HUD = (() => {
     ctx.fillText(G.U.mmss(st.time), w / 2, 42);
     ctx.font = F(600, 10);
     ctx.fillStyle = '#8fa3c4';
-    ctx.fillText(G.World.biomeName().toUpperCase() + '  ·  ' + pl.kills + ' DERROTADOS  ·  ' + pl.coins + ' MONEDAS', w / 2, 58);
+    ctx.fillText(G.World.biomeName().toUpperCase() + '  ·  ' + pl.kills + ' DERROTADOS  ·  ' + pl.coins + ' MONEDAS  ·  EXP ×' + G.AbilityData.xpMultiplier(st.time).toFixed(1), w / 2, 58);
 
     // ---------- clima (arriba a la derecha) ----------
     const wx = G.Weather.current;
@@ -108,6 +108,7 @@ G.HUD = (() => {
       ctx.fillStyle = '#20160a';
       ctx.fillText(boss.name.toUpperCase(), w / 2, 80);
     }
+    G.GymBattle.drawHud(ctx, w);
 
     // ---------- aviso ----------
     // ---------- shinies fuera de pantalla: destello en el borde ----------
@@ -241,10 +242,18 @@ G.HUD = (() => {
     }
 
     // ---------- ranura de movimientos ----------
-    const S = 54, GAP = 9;
     const n = Math.max(1, pl.slots.length);
+    const S = touch && n > 1 ? 42 : 54;
+    const GAP = touch && n > 1 ? 5 : 9;
     const totalW = n * S + (n - 1) * GAP;
-    let sx = (w - totalW) / 2;
+    const joinGap = touch ? 6 : 8, abilityGap = touch ? 4 : 5;
+    const abilitySize = touch
+      ? G.U.clamp(Math.floor((w - totalW - joinGap - 16 - abilityGap * 3) / 4), 22, 38)
+      : 34;
+    const abilityW = abilitySize * 4 + abilityGap * 3;
+    const groupW = abilityW + joinGap + totalW;
+    let barLeft = Math.max(4, (w - groupW) / 2);
+    let sx = barLeft + abilityW + joinGap;
     // Por encima de la barra de inicio del iPhone (allí los toques a veces no llegan).
     let sy = h - S - 18 - (touch ? Math.min(28, G.Touch.safeArea().bottom) : 0);
     // En móvil, donde la haya puesto el jugador: el bloque objeto + todos los
@@ -252,10 +261,14 @@ G.HUD = (() => {
     // (layout-ui.js); los ataques nuevos van saliendo hacia la derecha.
     const pb = touch && G.Touch.spot('bar');
     if (pb) {
-      const nAll = Math.max(n, pl.maxMoves), bw = S + 18 + nAll * S + (nAll - 1) * GAP;
-      sx = G.U.clamp(pb[0] * w - bw / 2, 6, Math.max(6, w - bw - 6)) + S + 18;
+      const nAll = Math.max(n, pl.maxMoves);
+      const layoutW = S + 18 + abilityW + joinGap + nAll * S + (nAll - 1) * GAP;
+      const layoutLeft = G.U.clamp(pb[0] * w - layoutW / 2, 4, Math.max(4, w - layoutW - 4));
+      barLeft = layoutLeft + S + 18;
+      sx = barLeft + abilityW + joinGap;
       sy = G.U.clamp(pb[1] * h - S / 2, 24, h - S - 6);
     }
+    drawAbilities(ctx, pl, barLeft, sy, abilitySize, abilityGap);
     const BOND = '#ff8ad8';
     const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * pl.cdMul), 0, 1);
 
@@ -308,14 +321,12 @@ G.HUD = (() => {
         // emblema del tipo + insignia de la familia
         G.Icons.draw(ctx, 'move:' + m.id, x + (S - 32) / 2, y + (S - 32) / 2 - 2, 32);
 
-        // nivel del movimiento (puntitos)
-        const dots = m.def.maxLvl;
-        const dw = 4, dgap = 2;
-        const tw = dots * dw + (dots - 1) * dgap;
-        for (let d = 0; d < dots; d++) {
-          ctx.fillStyle = d < m.lvl ? col : 'rgba(255,255,255,.18)';
-          ctx.fillRect(x + (S - tw) / 2 + d * (dw + dgap), y + S - 9, dw, 3);
-        }
+        ctx.font = F(800, 8);
+        ctx.textAlign = 'center';
+        ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(0,0,0,.85)';
+        ctx.strokeText('Nv.' + m.lvl, x + S / 2, y + S - 4);
+        ctx.fillStyle = '#fff';
+        ctx.fillText('Nv.' + m.lvl, x + S / 2, y + S - 4);
       }
 
       // tecla
@@ -347,7 +358,7 @@ G.HUD = (() => {
 
     // ---------- objeto equipado (a la izquierda de los movimientos) ----------
     {
-      const ix = sx - S - 18, iy = sy;
+      const ix = barLeft - S - 18, iy = sy;
       roundRect(ctx, ix, iy, S, S, 12);
       ctx.fillStyle = pl.item ? 'rgba(40,30,10,.9)' : 'rgba(10,16,28,.55)';
       ctx.fill();
@@ -382,8 +393,38 @@ G.HUD = (() => {
       ctx.font = F(600, 10);
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(180,200,230,.55)';
-      ctx.fillText(touch ? 'Arrastra el dedo para moverte  ·  toca un ataque para cambiarlo'
-                         : 'WASD moverse  ·  1-4 / Q / E o clic en un ataque para cambiarlo  ·  Esc pausa', w / 2, h - 4);
+      ctx.fillText(touch ? 'Arrastra para moverte · toca habilidades o ataques para usarlos'
+                         : 'WASD moverse · Espacio dash · Q escudo · R definitiva · E pasiva · Z/X cambia ataque · Esc pausa', w / 2, h - 4);
+    }
+
+    function drawAbilities(ctx, pl, x0, y0, size, gap) {
+      const entries = [
+        { id: 'dash', icon: 'dash', key: 'SPC', title: 'Dash', cd: G.AbilityData.DASH.cooldown, use: () => G.ActiveAbilities.dash(pl) },
+        { id: 'shield', icon: 'shield', key: 'Q', title: 'Escudo', cd: G.AbilityData.SHIELD.cooldown, use: () => G.ActiveAbilities.shield(pl) },
+        { id: 'ultimate', icon: 'star', key: 'R', title: 'Definitiva', cd: G.AbilityData.ULTIMATE.cooldown,
+          locked: !G.ActiveAbilities.ultimateUnlocked(pl), use: () => G.ActiveAbilities.ultimate(pl) },
+        { id: 'passive', icon: 'sprout', key: 'E', title: 'Pasiva', cd: 0, use: () => G.RunUI.showPassiveInfo(pl) }
+      ];
+      entries.forEach((a, i) => {
+        const x = x0 + i * (size + gap), cd = pl.abilityCooldowns[a.id] || 0;
+        const ready = !a.locked && cd <= 0;
+        G.Touch.addButton(x, y0, size, size, a.use, 3);
+        roundRect(ctx, x, y0, size, size, 8);
+        ctx.fillStyle = ready ? 'rgba(20,42,66,.9)' : 'rgba(10,16,28,.8)';
+        ctx.fill();
+        ctx.lineWidth = 1.5; ctx.strokeStyle = ready ? '#9feaff' : 'rgba(180,200,230,.45)'; ctx.stroke();
+        if (a.locked || cd > 0) {
+          ctx.fillStyle = 'rgba(0,0,0,.6)';
+          roundRect(ctx, x, y0, size, size, 8); ctx.fill();
+        }
+        const iconSize = Math.min(size - 8, 26);
+        G.Icons.draw(ctx, a.icon, x + (size - iconSize) / 2, y0 + 2, iconSize);
+        ctx.font = F(800, size < 30 ? 7 : 8);
+        ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+        ctx.fillText(a.locked ? 'LOCK' : cd > 0 ? Math.ceil(cd) + 's' : a.key, x + size / 2, y0 + size - 3);
+        ctx.font = F(600, 7); ctx.fillStyle = ready ? '#c9dbf5' : '#91a0bc';
+        ctx.fillText(a.title, x + size / 2, y0 + size + 9);
+      });
     }
 
     ctx.restore();

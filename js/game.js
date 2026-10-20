@@ -93,7 +93,7 @@ G.Game = (() => {
     storyVictory = false;
     const member = coop && coop.members.find(m => m.uid === G.Net.uid);
     const dex = storyMode && member ? member.dex : options.dex || save.partner;
-    if (storyMode && (!G.DEX_BY[dex] || dex > 151 || !G.DB.owns(dex))) {
+    if (storyMode && (!G.DEX_BY[dex] || !G.EvolutionData.isBase(dex) || !G.DB.owns(dex))) {
       storyMode = false;
       G.UI.toast('Historia requiere un Pokémon de Kanto (#001–151) que tengas en tu colección.');
       return false;
@@ -139,7 +139,17 @@ G.Game = (() => {
     if (!storyMode && (!coop || G.Coop.isHost)) G.Ranking.runStarted(coop ? 'g' : 's');
     deathT = 0;
 
-    state = 'playing';
+    state = 'choice';
+    if (G.Coop.active) G.Coop.holdStart();
+    G.RunUI.showInitialMove(mon, G.Moves.availableFor(mon), id => {
+      if (!pl || state === 'over') return;
+      pl.moves = [];
+      pl.slots = [];
+      pl.active = 0;
+      pl.addMove(id);
+      state = holdBy.length ? 'held' : 'playing';
+      if (G.Coop.active) G.Coop.holdEnd();
+    });
   }
 
   function quitRun() {
@@ -153,7 +163,7 @@ G.Game = (() => {
   /** Experiencia que hace falta para el siguiente nivel (cofres con candado). */
   function levelXp() {
     if (!pl) return 20;
-    const k = (G.Coop.active ? G.Coop.xpFactor() : 1) * (pl.xpMul || 1);
+    const k = (G.Coop.active ? G.Coop.xpFactor() : 1) * (pl.xpMul || 1) * G.AbilityData.xpMultiplier(time);
     return Math.ceil((pl.xpNext - pl.xp + 1) / k);
   }
 
@@ -381,7 +391,7 @@ G.Game = (() => {
     G.RunUI.showLevelUp(pl.level, G.LevelUp.offer(pl), card => {
       G.Audio.sfx('confirm');
       card.apply(pl);
-      state = 'playing';
+      if (state === 'levelup') state = 'playing';
     });
   }
 
@@ -550,6 +560,16 @@ G.Game = (() => {
       }
       return;
     }
+    if (G.UI.isOpen('scr-start-move')) {
+      for (let i = 0; i < 9; i++) {
+        if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) G.RunUI.pickInitialMove(i);
+      }
+      return;
+    }
+    if (G.UI.isOpen('scr-passive')) {
+      if (G.Input.tap('keye') || G.Input.tap('escape')) G.RunUI.closePassiveInfo();
+      return;
+    }
     if (state === 'ui') {
       // Esc en una subpantalla del menú vuelve al menú.
       if (G.Input.tap('escape') && !G.UI.isOpen('scr-profile') && ['scr-dex', 'scr-upgrades', 'scr-gacha', 'scr-friends', 'scr-rank', 'scr-goals', 'scr-story-select', 'scr-gym-medals'].some(G.UI.isOpen)
@@ -561,8 +581,11 @@ G.Game = (() => {
     for (let i = 0; i < 4; i++) {
       if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) pl.setActive(i);
     }
-    if (G.Input.tap('keyq')) pl.cycle(-1);
-    if (G.Input.tap('keye') || G.Input.tap('tab')) pl.cycle(1);
+    if (G.Input.tap('keyq')) G.ActiveAbilities.shield(pl);
+    if (G.Input.tap('keye')) G.RunUI.showPassiveInfo(pl);
+    if (G.Input.tap('keyr')) G.ActiveAbilities.ultimate(pl);
+    if (G.Input.tap('space')) G.ActiveAbilities.dash(pl);
+    if (G.Input.tap('keyz') || G.Input.tap('keyx') || G.Input.tap('tab')) pl.cycle(G.Input.tap('keyz') ? -1 : 1);
   }
 
   // ---------------- bucle ----------------
@@ -962,8 +985,8 @@ G.Flow = {
   /** Empieza la partida en grupo (el anfitrión la manda a todos). */
   startCoop(cfg) {
     if (G.Game.state !== 'ui' || !G.Social.room) return;
-    if (cfg.story && cfg.members.some(m => m.dex < 1 || m.dex > 151)) {
-      G.UI.toast('Historia solo admite Pokémon de Kanto (#001–151).');
+    if (cfg.story && cfg.members.some(m => !G.EvolutionData.isBase(m.dex))) {
+      G.UI.toast('Historia solo admite formas base de Pokémon de Kanto.');
       return;
     }
     G.LobbyUI.close();

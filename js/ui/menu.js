@@ -93,12 +93,13 @@ G.MenuUI = (() => {
   }
 
   function openStoryPicker() {
-    const owned = G.DEX.filter(p => p.dex <= 151 && G.DB.owns(p.dex));
+    const owned = G.DEX.filter(p => G.EvolutionData.isBase(p.dex) && G.DB.owns(p.dex));
     if (!owned.length) {
-      G.UI.toast('Aún no tienes Pokémon de Kanto. Consigue uno para jugar Historia.');
+      G.UI.toast('Aún no tienes una forma base de Kanto para jugar Historia.');
       return;
     }
-    storyDex = G.DB.save.partner <= 151 && G.DB.owns(G.DB.save.partner) ? G.DB.save.partner : owned[0].dex;
+    storyDex = G.EvolutionData.isBase(G.DB.save.partner) && G.DB.owns(G.DB.save.partner)
+      ? G.DB.save.partner : owned[0].dex;
     const grid = $('story-pokemon-grid');
     grid.innerHTML = '';
     for (const mon of owned) {
@@ -123,8 +124,8 @@ G.MenuUI = (() => {
 
   async function startStory() {
     const mon = G.DEX_BY[storyDex];
-    if (!mon || mon.dex > 151 || !G.DB.owns(mon.dex)) {
-      G.UI.toast('Elige un Pokémon de Kanto que tengas en tu colección.');
+    if (!mon || !G.EvolutionData.isBase(mon.dex) || !G.DB.owns(mon.dex)) {
+      G.UI.toast('Elige una forma base de Kanto que tengas en tu colección.');
       return;
     }
     storyQueued = true;
@@ -148,11 +149,29 @@ G.MenuUI = (() => {
     for (const gym of G.GymLeaders.LIST) {
       const record = earned[gym.id];
       const cell = document.createElement('div');
-      cell.className = 'cell' + (record ? ' on' : ' locked');
+      cell.className = 'cell gym-medal-cell' + (record ? ' on' : ' locked');
       cell.insertAdjacentHTML('beforeend', `<span class="no">#${String(gym.order).padStart(2, '0')}</span>`);
-      cell.appendChild(G.UI.spriteCanvas(gym.pokemon, 90, 76, { scale: 2, silhouette: !record }));
+      const art = document.createElement('div');
+      art.className = 'gym-medal-art';
+      const leader = document.createElement('img');
+      leader.className = 'gym-leader-image';
+      leader.src = gym.leaderImage;
+      leader.alt = record ? gym.leader : 'Líder de gimnasio aún no derrotado';
+      leader.draggable = false;
+      const badge = document.createElement('img');
+      badge.className = 'gym-badge-image';
+      badge.src = gym.medalImage;
+      badge.alt = record ? gym.medal : 'Medalla aún no conseguida';
+      badge.draggable = false;
+      art.append(leader, badge);
+      cell.appendChild(art);
+      cell.appendChild(G.UI.spriteCanvas(gym.pokemon, 68, 60, { scale: 2, silhouette: !record }));
       cell.insertAdjacentHTML('beforeend',
         `<b>${record ? gym.medal : '???'}</b><small>${record ? gym.leader + ' · ' + G.U.mmss(record.bestTime) : gym.city + ' · Sin conseguir'}</small>`);
+      if (!record) {
+        leader.classList.add('unearned');
+        badge.classList.add('unearned');
+      }
       grid.appendChild(cell);
     }
     G.UI.show('scr-gym-medals', true);

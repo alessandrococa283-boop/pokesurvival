@@ -147,6 +147,9 @@ G.Progress = (() => {
         S.evolutions = (S.evolutions || 0) + 1;
         s.evoMoves = s.evoMoves || {}; s.evoMoves[d.move] = s.evoMoves[d.move] || Date.now();
         break;
+      case 'pokemonEvolve':
+        S.pokemonEvolutions = (S.pokemonEvolutions || 0) + 1;
+        break;
       case 'item':
         s.itemsFound = s.itemsFound || {}; s.itemsFound[d.id] = s.itemsFound[d.id] || Date.now();
         break;

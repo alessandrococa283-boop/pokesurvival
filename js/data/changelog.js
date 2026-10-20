@@ -6,6 +6,21 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-20', title: ['Combate, habilidades y evoluciones', 'Combat, Abilities and Evolutions'], new: [
+    ['Antes de empezar eliges un ataque compatible con el tipo y la rareza de tu Pokémon. Durante la partida puedes usar el dash, el escudo, la pasiva y la habilidad definitiva; la experiencia aumenta con el tiempo.',
+     'Before a run, choose an attack compatible with your Pokémon’s type and rarity. During the run, use dash, shield, passive and ultimate abilities; experience gain scales over time.'],
+    ['En Historia solo se pueden elegir formas base de Kanto. Al alcanzar el nivel necesario, las evoluciones ocurren automáticamente; se conserva el ataque y sus mejoras cuando es compatible. Las evoluciones por piedra o intercambio no se activan automáticamente.',
+     'Story Mode only allows base forms from Kanto. Reaching the required level triggers evolution automatically; the current attack and its upgrades are kept when compatible. Stone and trade evolutions are not triggered automatically.'],
+    ['Las habilidades ahora se muestran en la misma barra inferior que el ataque. En los combates de gimnasio aparecen el retrato del líder y su medalla.',
+     'Abilities now appear in the same bottom bar as the attack. Gym battles display the leader portrait and badge.']
+  ], fix: [
+    ['Las mejoras de ataques remotos se reconstruyen respetando el orden correcto de cada nivel.',
+     'Remote attack upgrades are now reconstructed in the correct level order.']
+  ] },
+  { d: '2026-10-20', title: ['Retratos y medallas de Kanto', 'Kanto Leader Portraits and Badges'], new: [
+    ['La colección de gimnasios ahora muestra los retratos de sus líderes y las medallas de Kanto; permanecen en silueta hasta conseguir cada medalla.',
+     'The Gym collection now displays its Leaders’ portraits and Kanto badges; they remain silhouettes until each badge is earned.']
+  ] },
   { d: '2026-10-20', title: ['Modo Historia: los gimnasios de Kanto', 'Story Mode: Kanto Gyms'], new: [
     ['Llega el Modo Historia: elige un Pokémon de Kanto que ya tengas, enfréntate en orden a los ocho líderes en portales especiales y consigue sus medallas. Las victorias dan experiencia extra, cuentan para las misiones de jefes y registran tu mejor tiempo. Al reunir las ocho, completas Kanto. Arceus no aparece en este modo; los demás eventos y las grietas se mantienen.',
      'Story Mode is here: choose an owned Kanto Pokémon, challenge all eight Gym Leaders in order through special portals, and earn their badges. Victories grant bonus experience, count toward boss missions, and record your best time. Collect all eight to complete Kanto. Arceus does not appear in this mode; other events and rifts remain.']

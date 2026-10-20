@@ -4,6 +4,61 @@ G.GymBattle = (() => {
   const TS = () => G.Tiles.T * G.Sprites.PX;
   const authority = () => !G.Coop.active || G.Coop.isHost;
   let story = false, portal = null, fight = null;
+  const art = new Map();
+
+  function image(src) {
+    let entry = art.get(src);
+    if (entry) return entry;
+    const img = new Image();
+    entry = { img, ready: false };
+    img.onload = () => { entry.ready = true; };
+    img.onerror = () => console.warn('[GymBattle] No se pudo cargar la imagen:', src);
+    img.src = src;
+    art.set(src, entry);
+    return entry;
+  }
+
+  function drawHud(ctx, w) {
+    if (!fight) return;
+    const gym = fight.gym;
+    const portrait = image(gym.leaderImage), badge = image(gym.medalImage);
+    const cardW = Math.min(256, w - 20), cardH = 70;
+    const x = (w - cardW) / 2, y = 88;
+    ctx.save();
+    ctx.fillStyle = 'rgba(10,16,28,.88)';
+    ctx.strokeStyle = 'rgba(255,210,63,.8)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x + 10, y);
+    ctx.arcTo(x + cardW, y, x + cardW, y + cardH, 10);
+    ctx.arcTo(x + cardW, y + cardH, x, y + cardH, 10);
+    ctx.arcTo(x, y + cardH, x, y, 10);
+    ctx.arcTo(x, y, x + cardW, y, 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    if (portrait.ready) {
+      const scale = Math.min(46 / portrait.img.naturalWidth, 60 / portrait.img.naturalHeight);
+      const pw = portrait.img.naturalWidth * scale, ph = portrait.img.naturalHeight * scale;
+      ctx.drawImage(portrait.img, x + 30 - pw / 2, y + 35 - ph / 2, pw, ph);
+    }
+    if (badge.ready) {
+      const scale = Math.min(36 / badge.img.naturalWidth, 36 / badge.img.naturalHeight);
+      const bw = badge.img.naturalWidth * scale, bh = badge.img.naturalHeight * scale;
+      ctx.drawImage(badge.img, x + cardW - 28 - bw / 2, y + 35 - bh / 2, bw, bh);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffd23f';
+    ctx.font = '800 12px Pixelify,"Segoe UI",system-ui,sans-serif';
+    ctx.fillText(gym.leader, x + cardW / 2, y + 27);
+    ctx.fillStyle = '#f4f8ff';
+    ctx.font = '700 9px Pixelify,"Segoe UI",system-ui,sans-serif';
+    ctx.fillText(gym.medal, x + cardW / 2, y + 45);
+    ctx.fillStyle = '#9fb1c9';
+    ctx.font = '600 8px Pixelify,"Segoe UI",system-ui,sans-serif';
+    ctx.fillText(gym.city, x + cardW / 2, y + 59);
+    ctx.restore();
+  }
 
   function reset(enabled = false) {
     story = !!enabled;
@@ -69,6 +124,8 @@ G.GymBattle = (() => {
     if (fight) return;
     const gym = G.GymLeaders.BY_ID[cfg.id];
     if (!gym) return;
+    image(gym.leaderImage);
+    image(gym.medalImage);
     const pl = G.Game.player;
     const ts = TS();
     const positions = new Map();
@@ -219,7 +276,7 @@ G.GymBattle = (() => {
   }
 
   return {
-    reset, update, drawable, onEvent,
+    reset, update, drawable, onEvent, drawHud,
     get inArena() { return !!fight; },
     get story() { return story; },
     get medals() { return medals(); },
