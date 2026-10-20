@@ -5,8 +5,9 @@ GitHub guarda el código fuente; Firebase Hosting sirve el sitio en
 Firebase y no requiere comprar un dominio ni configurar DNS.
 
 La configuración de Hosting está en `firebase.json`, en la raíz del
-repositorio, y publica el contenido de `public/`. Los archivos fuente y las
-herramientas del juego también están dentro de `public/`.
+repositorio, y publica el contenido de `public/`. El código fuente se mantiene
+en la raíz; `tools/prepare_hosting.js` copia a `public/` sólo los archivos
+generados y recursos necesarios para el sitio.
 
 ## Requisitos
 
@@ -17,14 +18,18 @@ herramientas del juego también están dentro de `public/`.
 
 ## Preparar y subir cambios a GitHub
 
-Desde PowerShell, en la raíz del repositorio:
+Desde PowerShell, en la raíz del repositorio, prepara los archivos publicados:
 
 ```powershell
-Set-Location .\public
-node .\tools\build.js
-node .\tools\export_data.js
-python .\tools\make_seo_pages.py
-Set-Location ..
+node tools/build.js
+node tools/export_data.js
+python tools/make_seo_pages.py
+node tools/prepare_hosting.js
+```
+
+Después, revisa y sube los cambios a GitHub:
+
+```powershell
 git status
 git add -A
 git commit -m "Describe los cambios"
@@ -59,12 +64,13 @@ npx firebase-tools deploy --only hosting --project proyecto-pokemon2
 ```
 
 Ejecuta el comando desde la raíz del repositorio, donde está `firebase.json`.
-La carpeta publicada es `public/`. La URL asignada por Firebase es
+Antes del despliegue, ejecuta `node tools/prepare_hosting.js`; la carpeta
+publicada es `public/`. La URL asignada por Firebase es
 <https://proyecto-pokemon2.web.app/>.
 
 **No ejecutes `firebase deploy` sin `--only hosting`**: también podría
 desplegar reglas de bases de datos e índices. Para modificar reglas, revisa
-primero `public/firestore.rules` y `public/database.rules.json`, y despliega
+primero `firestore.rules` y `database.rules.json`, y despliega
 esos servicios por separado.
 
 ## Comprobación posterior

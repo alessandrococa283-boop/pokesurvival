@@ -21,3 +21,7 @@ docs/CONTACTOS_CREADORES.md
 
 # Caché local de wrangler (Cloudflare)
 .wrangler/
+
+# Salida generada para Firebase Hosting (se recrea con prepare_hosting.js)
+public/*
+!public/index.html
