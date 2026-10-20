@@ -3,15 +3,18 @@ G.MenuUI = (() => {
   const $ = G.UI.$;
   const GEN_NAMES = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Teselia', 'Kalos', 'Alola', 'Galar', 'Paldea'];
   let dexFilter = 'all', dexGen = 1, dexSel = null;
+  let storyDex = null, storyQueued = false;
 
   function init() {
-    const ICON = { play: 'ball', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
+    const ICON = { play: 'ball', story: 'medal2', 'gym-medals': 'medal3', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
       b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 26)}</span>`);
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
       b.onclick = () => {
         const go = b.dataset.go;
         if (go === 'play') { if (G.Social.room) G.LobbyUI.open(); else G.Flow.play(); }
+        else if (go === 'story') openStoryPicker();
+        else if (go === 'gym-medals') openGymMedals();
         else if (go === 'dex') openDex();
         else if (go === 'upgrades') openUpgrades();
         else if (go === 'gacha') G.GachaUI.open();
@@ -22,6 +25,8 @@ G.MenuUI = (() => {
       };
     });
     document.querySelectorAll('[data-back]').forEach(b => { b.onclick = open; });
+    $('story-cancel').onclick = open;
+    $('story-start').onclick = startStory;
     G.Social.on(() => { if (G.UI.isOpen('scr-menu')) socialLine(); });
     $('btn-logout').onclick = () => {
       if (G.DB.guest && !confirm('Eres invitado: se perderá todo el progreso. ¿Salir?')) return;
@@ -74,6 +79,9 @@ G.MenuUI = (() => {
     const pend = G.Progress.pending();
     $('menu-goals-sub').textContent = pend ? pend + (pend === 1 ? ' premio por recoger' : ' premios por recoger') : 'Misiones, logros y perfil';
     $('menu-goals-sub').classList.toggle('gold', pend > 0);
+    const gymCount = Object.keys(s.gymMedals || {}).length;
+    $('menu-gym-medals-sub').textContent = `${gymCount} / ${G.GymLeaders.LIST.length} conseguidas`;
+    $('menu-gym-medals-sub').classList.toggle('gold', gymCount === G.GymLeaders.LIST.length);
     // Con cuenta en la nube: amigos en línea, invitaciones y (una vez) el apodo.
     if (G.DB.online && !G.Social.started) {
       G.Social.start().then(r => {
@@ -82,6 +90,72 @@ G.MenuUI = (() => {
       });
     }
     G.InvitePop.refresh();
+  }
+
+  function openStoryPicker() {
+    const owned = G.DEX.filter(p => p.dex <= 151 && G.DB.owns(p.dex));
+    if (!owned.length) {
+      G.UI.toast('Aún no tienes Pokémon de Kanto. Consigue uno para jugar Historia.');
+      return;
+    }
+    storyDex = G.DB.save.partner <= 151 && G.DB.owns(G.DB.save.partner) ? G.DB.save.partner : owned[0].dex;
+    const grid = $('story-pokemon-grid');
+    grid.innerHTML = '';
+    for (const mon of owned) {
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'cell' + (mon.dex === storyDex ? ' on' : '');
+      cell.innerHTML = `<span class="no">Nº ${String(mon.dex).padStart(3, '0')}</span>`;
+      cell.appendChild(G.UI.spriteCanvas(mon.dex, 84, 72, { scale: 2 }));
+      cell.insertAdjacentHTML('beforeend', `<b>${mon.name}</b>${G.UI.typeChips(mon.types)}`);
+      cell.onclick = () => {
+        storyDex = mon.dex;
+        grid.querySelectorAll('.cell').forEach(el => el.classList.toggle('on', el === cell));
+        $('story-selection-note').textContent = `${mon.name} será tu Pokémon para la Historia.`;
+        $('story-start').disabled = false;
+      };
+      grid.appendChild(cell);
+    }
+    $('story-selection-note').textContent = `${G.DEX_BY[storyDex].name} será tu Pokémon para la Historia.`;
+    $('story-start').disabled = false;
+    G.UI.show('scr-story-select', true);
+  }
+
+  async function startStory() {
+    const mon = G.DEX_BY[storyDex];
+    if (!mon || mon.dex > 151 || !G.DB.owns(mon.dex)) {
+      G.UI.toast('Elige un Pokémon de Kanto que tengas en tu colección.');
+      return;
+    }
+    storyQueued = true;
+    if (G.Social.room) {
+      const updated = await G.Social.refreshMember(mon.dex, false);
+      if (!updated) {
+        storyQueued = false;
+        G.UI.toast('No se pudo actualizar tu Pokémon en la sala. Inténtalo de nuevo.');
+        return;
+      }
+      G.LobbyUI.open();
+      return;
+    }
+    storyQueued = false;
+    G.Flow.startStory(mon.dex);
+  }
+
+  function openGymMedals() {
+    const grid = $('gym-medals-grid'), earned = G.DB.save.gymMedals || {};
+    grid.innerHTML = '';
+    for (const gym of G.GymLeaders.LIST) {
+      const record = earned[gym.id];
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (record ? ' on' : ' locked');
+      cell.insertAdjacentHTML('beforeend', `<span class="no">#${String(gym.order).padStart(2, '0')}</span>`);
+      cell.appendChild(G.UI.spriteCanvas(gym.pokemon, 90, 76, { scale: 2, silhouette: !record }));
+      cell.insertAdjacentHTML('beforeend',
+        `<b>${record ? gym.medal : '???'}</b><small>${record ? gym.leader + ' · ' + G.U.mmss(record.bestTime) : gym.city + ' · Sin conseguir'}</small>`);
+      grid.appendChild(cell);
+    }
+    G.UI.show('scr-gym-medals', true);
   }
 
   /** Texto bajo "Amigos" y "Jugar": quién está en línea, solicitudes, sala. */
@@ -358,5 +432,10 @@ G.MenuUI = (() => {
     return el;
   }
 
-  return { init, open, GEN_NAMES };
+  return {
+    init, open, GEN_NAMES,
+    get storyQueued() { return storyQueued; },
+    get storyDex() { return storyDex; },
+    clearStoryQueue() { storyQueued = false; }
+  };
 })();

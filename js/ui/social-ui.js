@@ -171,7 +171,8 @@
 
     function open() {
       if (!G.Social.room) { G.MenuUI.open(); return; }
-      G.Social.refreshMember();
+      if (G.MenuUI.storyQueued) G.Social.refreshMember(G.MenuUI.storyDex, false);
+      else G.Social.refreshMember();
       G.Social.refreshPresence();
       G.UI.show('scr-lobby', true);
       membersKey = '';
@@ -257,10 +258,17 @@
     function start() {
       const room = G.Social.room;
       if (!room || !room.isHost || room.members.length < 2) return;
+      const story = G.MenuUI.storyQueued;
+      if (story && room.members.some(m => m.dex < 1 || m.dex > 151)) {
+        G.UI.toast('Para Historia, cada jugador debe elegir un Pokémon de Kanto en su colección antes de empezar.');
+        return;
+      }
       const cfg = {
         k: 'start', seed: Math.floor(Math.random() * 1e6), host: room.host,
+        story,
         members: room.members.map(m => ({ uid: m.uid, name: m.name, dex: m.dex, shiny: !!m.shiny }))
       };
+      G.MenuUI.clearStoryQueue();
       G.Social.setOpen(false);
       G.Net.broadcast(cfg);
       G.Flow.startCoop(cfg);

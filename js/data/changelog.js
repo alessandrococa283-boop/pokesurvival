@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-20', title: ['Modo Historia: los gimnasios de Kanto', 'Story Mode: Kanto Gyms'], new: [
+    ['Llega el Modo Historia: elige un Pokémon de Kanto que ya tengas, enfréntate en orden a los ocho líderes en portales especiales y consigue sus medallas. Las victorias dan experiencia extra, cuentan para las misiones de jefes y registran tu mejor tiempo. Al reunir las ocho, completas Kanto. Arceus no aparece en este modo; los demás eventos y las grietas se mantienen.',
+     'Story Mode is here: choose an owned Kanto Pokémon, challenge all eight Gym Leaders in order through special portals, and earn their badges. Victories grant bonus experience, count toward boss missions, and record your best time. Collect all eight to complete Kanto. Arceus does not appear in this mode; other events and rifts remain.']
+  ] },
   { d: '2026-10-20', title: ['Acceso con correo y contraseña', 'Sign in with email and password'], new: [
     ['Las cuentas nuevas se crean e inician sesión con correo electrónico y contraseña; el nombre de jugador se elige por separado. Puedes pedir un enlace para restablecer la contraseña. Las cuentas antiguas todavía admiten iniciar sesión con su nombre anterior.',
      'New accounts use an email address and password; choose a separate player name. You can request a password reset link. Older accounts can still sign in with their previous name.']

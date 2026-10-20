@@ -207,6 +207,7 @@ G.Judgment = (() => {
 
   /** En la pelea (lo llama game.js en cada fotograma de juego). */
   function update(dt, pl, time) {
+    if (G.Game.storyMode) return;
     if (!phase) {
       sampleDps(dt);                        // (para la vida del primer legendario)
       if (authority() && time >= AT && !G.Rift.inArena) start();

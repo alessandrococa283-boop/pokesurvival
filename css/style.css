@@ -114,6 +114,9 @@ input { font: inherit; }
 
 /* Lista de menú con cursor (flecha pixel art), como en PMD */
 .menu-list { display: flex; flex-direction: column; gap: 4px; }
+#scr-menu .menu-list { max-height: 70vh; overflow-y: auto; }
+#story-pokemon-grid { max-height: 54vh; overflow-y: auto; }
+#story-pokemon-grid .cell { cursor: pointer; }
 .menu-item {
   appearance: none; background: none; border: 0; cursor: pointer;
   text-align: left; padding: 8px 10px 8px 30px; border-radius: 6px;

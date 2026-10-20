@@ -11,12 +11,14 @@ En Firebase Console, dentro de `proyecto-pokemon2`:
 1. En **Authentication → Sign-in method**, habilita los proveedores que vas a
    ofrecer en el juego: correo/contraseña y Google.
 2. En **Authentication → Settings → Authorized domains**, añade:
-   `proyecto-pokemon2.web.app`. Para pruebas locales añade `localhost` y
-   `127.0.0.1` si Firebase Console lo permite.
-3. Crea Firestore en modo de producción y revisa sus reglas antes de publicar.
-4. Crea Realtime Database en la región elegida para el proyecto. Este proyecto
-   espera la dirección `https://proyecto-pokemon2-default-rtdb.firebaseio.com`.
-   Revisa `database.rules.json` antes de desplegar sus reglas.
+   `proyecto-pokemon2.web.app` y `proyecto-pokemon2.firebaseapp.com`. Para
+   pruebas locales añade `localhost` y `127.0.0.1` si Firebase Console lo permite.
+3. La base de Firestore Standard `(default)` ya está creada en `us-central1`.
+   Revisa sus reglas antes de modificarlas o volverlas a desplegar.
+4. Realtime Database ya está creada como
+   `proyecto-pokemon2-default-rtdb`. Este proyecto espera la dirección
+   `https://proyecto-pokemon2-default-rtdb.firebaseio.com`. Revisa
+   `database.rules.json` antes de desplegar sus reglas.
 5. En **Project settings → Your apps**, registra la app web y compara sus datos
    con `js/core/firebase-config.js`.
 
@@ -29,6 +31,7 @@ Si la API key tiene restricciones de referente HTTP, autoriza estos orígenes en
 Google Cloud Console:
 
 - `https://proyecto-pokemon2.web.app/*`
+- `https://proyecto-pokemon2.firebaseapp.com/*`
 - `http://127.0.0.1:8080/*`
 - `http://localhost:8080/*`
 

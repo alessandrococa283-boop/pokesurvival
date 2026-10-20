@@ -85,6 +85,7 @@ G.DB = (() => {
       pity: {},               // generación del banner -> tiradas sin ★5
       legends: {},            // dex -> fecha: legendarios vencidos en grietas
       arenas: {},             // tipo -> fecha: arenas de grieta ganadas
+      gymMedals: {},          // líder de Kanto -> { at, bestTime }
       itemsFound: {},         // id -> fecha: objetos equipables encontrados
       evoMoves: {},           // id -> fecha: movimientos evolucionados alguna vez
       ach: {},                // id -> fecha: logros conseguidos
@@ -138,6 +139,14 @@ G.DB = (() => {
     } else delete s.led;
     if (G.DEX_BY) for (const coll of ['owned', 'shiny']) {
       for (const d of Object.keys(s[coll] || {})) if (!G.DEX_BY[d]) delete s[coll][d];
+    }
+    if (!isObj(s.gymMedals)) s.gymMedals = {};
+    if (G.GymLeaders) for (const id of Object.keys(s.gymMedals)) {
+      const result = s.gymMedals[id];
+      if (!G.GymLeaders.BY_ID[id] || !isObj(result)) { delete s.gymMedals[id]; continue; }
+      result.at = n(result.at);
+      result.bestTime = n(result.bestTime);
+      if (!result.at || !result.bestTime) delete s.gymMedals[id];
     }
     // Atajos: 4 huecos con un movimiento que exista (o null), sin repetir.
     if (s.pbind && typeof s.pbind === 'object') {
@@ -259,9 +268,16 @@ G.DB = (() => {
     }
     r.pupgDone = r.pupgDone || older.pupgDone;
     // Lo conseguido nunca se pierde: unión de legendarios, arenas, objetos, logros...
-    for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach']) {
+    for (const coll of ['legends', 'arenas', 'gymMedals', 'itemsFound', 'evoMoves', 'ach']) {
       r[coll] = r[coll] || {};
       for (const k in older[coll] || {}) if (!r[coll][k]) r[coll][k] = older[coll][k];
+    }
+    for (const id in older.gymMedals || {}) {
+      const old = older.gymMedals[id], current = r.gymMedals[id];
+      if (current && old) {
+        current.bestTime = Math.min(current.bestTime || Infinity, old.bestTime || Infinity);
+        current.at = Math.min(current.at || Infinity, old.at || Infinity);
+      }
     }
     // Misiones del mismo día/semana: el mayor progreso y lo ya recogido.
     const mo = older.missions || {}, mr = r.missions = r.missions || {};
@@ -420,7 +436,7 @@ G.DB = (() => {
    * Firebase; la API key también debe restringirse a estos dominios en Google
    * Cloud Console.
    */
-  const HOSTS = ['proyecto-pokemon2.web.app', 'localhost', '127.0.0.1'];
+  const HOSTS = ['proyecto-pokemon2.web.app', 'proyecto-pokemon2.firebaseapp.com', 'localhost', '127.0.0.1'];
 
   async function initCloud() {
     const cfg = G.FIREBASE_CONFIG;
@@ -437,7 +453,7 @@ G.DB = (() => {
     fs = firebase.firestore();
     // Algunas redes y antivirus cortan las actualizaciones en directo (amigos,
     // invitaciones): Firebase prueba otra forma de recibirlas si hace falta.
-    try { fs.settings({ experimentalAutoDetectLongPolling: true }); } catch (e) { /* ya estaba */ }
+    try { fs.settings({ experimentalAutoDetectLongPolling: true, merge: true }); } catch (e) { /* ya estaba */ }
     rtdb = cfg.databaseURL ? firebase.database() : null;
     // Sólo para pruebas: { ..., emulator: true } usa el emulador local de Firebase.
     if (cfg.emulator) {

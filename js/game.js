@@ -21,6 +21,7 @@ G.Game = (() => {
   let pl = null;
   let caught = [];          // shinies conseguidos en esta run
   let biome = -1;
+  let storyMode = false, storyVictory = false;
 
   const st = { get time() { return time; } };
 
@@ -85,10 +86,19 @@ G.Game = (() => {
   // ---------------- run ----------------
 
   /** @param coop  { seed, host, members } para una partida en grupo */
-  function startRun(coop = null) {
+  function startRun(coop = null, options = {}) {
     holdBy = []; awayBy = null;
     const save = G.DB.save;
-    const mon = G.DEX_BY[save.partner];
+    storyMode = !!options.story || !!(coop && coop.story);
+    storyVictory = false;
+    const member = coop && coop.members.find(m => m.uid === G.Net.uid);
+    const dex = storyMode && member ? member.dex : options.dex || save.partner;
+    if (storyMode && (!G.DEX_BY[dex] || dex > 151 || !G.DB.owns(dex))) {
+      storyMode = false;
+      G.UI.toast('Historia requiere un Pokémon de Kanto (#001–151) que tengas en tu colección.');
+      return false;
+    }
+    const mon = G.DEX_BY[dex];
     const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
 
     G.UI.hideAll();
@@ -100,6 +110,7 @@ G.Game = (() => {
     G.Pickups.clear();
     G.Spawner.reset();
     G.Rift.reset();
+    G.GymBattle.reset(storyMode);
     G.Judgment.reset();
     G.Events.reset();
     G.Weather.reset();
@@ -111,7 +122,7 @@ G.Game = (() => {
     time = 0; pendingLevels = 0;
     runReal = performance.now(); tampered = false;
 
-    pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
+    pl = new G.Player(mon, perks, !storyMode && !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
     banked = { t1: 0, t10: 0 };
     caught = [];
     pl.addMove(G.startMoveOf(mon.dex));
@@ -125,7 +136,7 @@ G.Game = (() => {
     G.Sprites.preload([mon.dex], 8000, pl.shiny);
     G.Audio.music(G.BIOME_MUSIC[0]);
     // Para el ranking: el servidor apunta cuándo empieza la partida (anti-trampas).
-    if (!coop || G.Coop.isHost) G.Ranking.runStarted(coop ? 'g' : 's');
+    if (!storyMode && (!coop || G.Coop.isHost)) G.Ranking.runStarted(coop ? 'g' : 's');
     deathT = 0;
 
     state = 'playing';
@@ -216,6 +227,7 @@ G.Game = (() => {
     over(d) {
       if (d) Object.assign(pl, { kills: d.ki, bosses: d.bo, coins: d.co, level: Math.max(pl.level, d.lv || 1), t1: d.t1 || pl.t1, t10: d.t10 || pl.t10 });
       if (d && d.t) time = d.t;
+      if (d && d.why === 'story') storyVictory = true;
       if (d && d.why === 'host') G.UI.toast('El anfitrión ha terminado la partida', 3200);
       endRun(!(d && d.why === 'host'));
     },
@@ -277,6 +289,7 @@ G.Game = (() => {
 
   function endRun(dead = true) {
     if (state === 'over' || !pl) return;
+    const storyWon = storyMode && storyVictory;
     const coop = !!pl.uid;                    // sólo las partidas en grupo le ponen uid
     const wasHost = !!pl.coopHost;
     const team = coop ? G.Coop.members.slice() : [];
@@ -318,16 +331,16 @@ G.Game = (() => {
     const mark = { t: Math.floor(time), lv: pl.level, kills: pl.kills };
     // Si la partida se ha tocado (ver clean()), no sube al ranking (sin avisar); lo demás, sí.
     const ok = clean();
-    const sent = ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
-               : ok && wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team })) : null;
+    const sent = !storyMode && ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
+               : !storyMode && ok && wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team })) : null;
     if (sent) sent.then(b => { if (b && b.some(p => p !== 'a')) G.DB.commit(true); }).catch(() => {});
 
     G.RunUI.showOver({
       dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
-      moves: pl.moves, caught,
+      moves: pl.moves, caught, storyWon,
       breakdown: Object.entries(parts).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(' · ') +
                  (mul > 1 ? ` · ×${mul.toFixed(2)} Fortuna` : '')
-    }, () => { pl = null; G.Flow.afterRun(); });
+    }, () => { pl = null; storyMode = false; storyVictory = false; G.GymBattle.reset(false); G.Flow.afterRun(); });
   }
 
   /*
@@ -539,7 +552,7 @@ G.Game = (() => {
     }
     if (state === 'ui') {
       // Esc en una subpantalla del menú vuelve al menú.
-      if (G.Input.tap('escape') && !G.UI.isOpen('scr-profile') && ['scr-dex', 'scr-upgrades', 'scr-gacha', 'scr-friends', 'scr-rank', 'scr-goals'].some(G.UI.isOpen)
+      if (G.Input.tap('escape') && !G.UI.isOpen('scr-profile') && ['scr-dex', 'scr-upgrades', 'scr-gacha', 'scr-friends', 'scr-rank', 'scr-goals', 'scr-story-select', 'scr-gym-medals'].some(G.UI.isOpen)
           && document.getElementById('pull-fx').classList.contains('hidden')) G.MenuUI.open();
       return;
     }
@@ -618,7 +631,7 @@ G.Game = (() => {
     }
     // Tras caer, deja que se vea la animación de Faint antes del resumen.
     // (En la arena de la grieta no: allí caer sólo te echa de vuelta.)
-    if (pl.dead && !coop && !G.Rift.inArena) {
+    if (pl.dead && !coop && !G.Rift.inArena && !G.GymBattle.inArena) {
       deathT += dt;
       pl.update(dt);
       G.EnemyMgr.update(dt * 0.3, pl);
@@ -660,6 +673,8 @@ G.Game = (() => {
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
     G.Rift.update(dt, pl, time);
+    G.GymBattle.update(dt, pl, time);
+    if (state === 'over') return;
     G.Judgment.update(dt, pl, time);
     G.Events.update(dt, all, time);
     G.Weather.update(dt, time, pl);
@@ -680,7 +695,7 @@ G.Game = (() => {
 
   /** Anfitrión: si caéis todos, se acaba (tras ver caer al último). */
   function checkAllDown(dt) {
-    if (G.Rift.inArena || !G.Coop.players().every(p => p.dead)) { deathT = 0; return; }
+    if (G.Rift.inArena || G.GymBattle.inArena || !G.Coop.players().every(p => p.dead)) { deathT = 0; return; }
     deathT += dt;
     if (deathT > 1.6) {
       deathT = 0;
@@ -707,6 +722,8 @@ G.Game = (() => {
     for (const e of extra) items.push({ y: e.y, ent: e });
     const rift = G.Rift.drawable();
     if (rift) items.push({ y: rift.y, ent: rift });
+    const gymPortal = G.GymBattle.drawable();
+    if (gymPortal) items.push({ y: gymPortal.y, ent: gymPortal });
     const arceus = pl && state !== 'ui' ? G.Judgment.drawable() : null;
     if (arceus) items.push({ y: arceus.y, ent: arceus });
     if (pl && state !== 'ui') for (const d of G.Events.drawables()) items.push({ y: d.y, ent: d });
@@ -857,6 +874,13 @@ G.Game = (() => {
     return { init, render, restore };
   })();
 
+  function completeStory() {
+    if (!storyMode || storyVictory || (G.Coop.active && !G.Coop.isHost)) return;
+    storyVictory = true;
+    if (G.Coop.active) G.Coop.over(Object.assign(summary(), { why: 'story' }));
+    endRun(false);
+  }
+
   return {
     init, startRun, everyone, levelXp, flash, offerBond,
     /** Para pruebas: salta el reloj de la run. */
@@ -869,7 +893,8 @@ G.Game = (() => {
     /** Para grabar vídeos: abre las cartas de subir de nivel. */
     debugLevelUp() { tampered = true; pl.level++; pendingLevels++; },
     toUI() { state = 'ui'; Backdrop.restore(); },
-    get state() { return state; }, get player() { return pl; }, st
+    completeStory,
+    get state() { return state; }, get player() { return pl; }, get storyMode() { return storyMode; }, st
   };
 })();
 
@@ -933,10 +958,15 @@ G.Flow = {
     } else this.goMenu();
   },
   play() { G.Game.startRun(); },
+  startStory(dex) { G.Game.startRun(null, { story: true, dex }); },
   /** Empieza la partida en grupo (el anfitrión la manda a todos). */
   startCoop(cfg) {
     if (G.Game.state !== 'ui' || !G.Social.room) return;
+    if (cfg.story && cfg.members.some(m => m.dex < 1 || m.dex > 151)) {
+      G.UI.toast('Historia solo admite Pokémon de Kanto (#001–151).');
+      return;
+    }
     G.LobbyUI.close();
-    G.Game.startRun(cfg);
+    G.Game.startRun(cfg, { story: !!cfg.story });
   }
 };

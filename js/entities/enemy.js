@@ -43,7 +43,7 @@
 
       const types = (G.DEX_BY[def.dex] && G.DEX_BY[def.dex].types) || [];
       this.types = types.length ? types : ['normal'];
-      this.atkType = this.types[0];         // tipo de sus golpes (tabla de tipos)
+      this.atkType = def.moveType || this.types[0]; // tipo de sus golpes (tabla de tipos)
       // Vuelan por encima de rocas y agua sólo los que FLOTAN en su sprite (un
       // Rowlet camina aunque sea Volador). Los jefes, por su tamaño, también.
       this.flying = boss || G.Sprites.hovers(def.dex);

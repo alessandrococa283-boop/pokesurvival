@@ -403,9 +403,14 @@ G.Social = (() => {
   }
 
   /** Actualiza tu Pokémon en la sala (si cambias de compañero). */
-  function refreshMember() {
-    if (room && me) fb.rtdb.ref('rooms/' + room.id + '/m/' + uid).update(
-      { dex: G.DB.save.partner, shiny: !!G.DB.save.partnerShiny && G.DB.ownsShiny(G.DB.save.partner) }).catch(() => {});
+  function refreshMember(dex = G.DB.save.partner, shiny = !!G.DB.save.partnerShiny && G.DB.ownsShiny(G.DB.save.partner)) {
+    if (!room || !me) return Promise.resolve(true);
+    return fb.rtdb.ref('rooms/' + room.id + '/m/' + uid).update({ dex, shiny })
+      .then(() => true)
+      .catch(e => {
+        console.warn('[Social] actualizar Pokémon de sala:', e.code || e.message);
+        return false;
+      });
   }
 
   // ---------------- invitaciones ----------------

@@ -90,8 +90,9 @@ G.RunUI = (() => {
   }
 
   function showOver(r, onBack) {
-    $('over-title').textContent = r.dead ? 'Has caído…' : 'Run terminada';
+    $('over-title').textContent = r.storyWon ? '¡Kanto completado!' : r.dead ? 'Has caído…' : 'Run terminada';
     $('over-stats').innerHTML = `
+      ${r.storyWon ? '<div style="grid-column:1/-1;text-align:center" class="gold">¡Has conseguido las ocho medallas y completado la región de Kanto!</div>' : ''}
       <div><span>Tiempo</span><b>${G.U.mmss(r.time)}</b></div>
       <div><span>Nivel</span><b>${r.level}</b></div>
       <div><span>Derrotados</span><b>${r.kills}</b></div>
