@@ -1,0 +1,8 @@
+# PokéSurvival
+User-agent: *
+Allow: /
+Disallow: /tools/
+Disallow: /docs/
+Disallow: /dev.html
+
+Sitemap: https://proyecto-pokemon2.web.app/sitemap.xml
