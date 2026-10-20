@@ -38,9 +38,10 @@ los necesita.
 
 ## Publicar reglas con cuidado
 
-`firebase.json` contiene reglas de Firestore y Realtime Database. Desplegarlas
-es independiente de Hosting. Sólo después de revisar las reglas y confirmar que
-las bases de datos ya existen, usa:
+El `firebase.json` de la raíz del repositorio configura Hosting para publicar
+`public/`. Desplegar reglas de Firestore o Realtime Database es independiente
+de Hosting. Sólo después de revisar las reglas y confirmar que las bases de
+datos ya existen, usa desde la raíz del repositorio:
 
 ```powershell
 npx firebase-tools deploy --only firestore,database --project proyecto-pokemon2
