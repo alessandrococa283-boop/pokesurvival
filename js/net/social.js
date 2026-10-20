@@ -89,8 +89,8 @@ G.Social = (() => {
       if (G.DB.user !== prof.name) G.DB.setName(prof.name);
       try { localStorage.setItem(NICK, prof.name); } catch (e) { /* nada */ }
     }
-    else if (G.DB.nameAccount) {
-      // Cuentas de nombre y contraseña: su nombre ya es único, se usa de apodo.
+    else if (G.DB.passwordAccount) {
+      // Las cuentas con contraseña usan el nombre de jugador guardado como apodo.
       const r = await claimNick(G.DB.save.name);
       if (!r.ok) return 'need-nick';
     } else return 'need-nick';

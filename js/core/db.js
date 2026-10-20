@@ -8,8 +8,8 @@
  *     Si hay configuración en js/core/firebase-config.js y el juego se abre
  *     desde una web (http/https, también localhost). La partida se guarda en
  *     saves/{uid} y se puede seguir en cualquier ordenador.
- *       - Usuario + contraseña: Firebase pide un email, así que el nombre se
- *         convierte en uno interno (nunca se le envía nada).
+ *       - Correo + contraseña.
+ *       - Las cuentas antiguas también pueden entrar con su nombre anterior.
  *       - Cuenta de Google.
  *     Además se guarda una copia local para poder jugar sin conexión; al
  *     sincronizar se FUSIONA (ver merge): las colecciones se unen y nunca se
@@ -337,10 +337,10 @@ G.DB = (() => {
     write(K_SES, k);
   }
 
-  async function registerLocal(name, pass) {
+  async function registerLocal(email, name, pass) {
     const accs = read(K_ACC) || {};
-    const k = name.toLowerCase();
-    if (accs[k]) return { ok: false, error: 'Ese nombre ya existe.' };
+    const k = email.toLowerCase();
+    if (accs[k]) return { ok: false, error: 'Ese correo ya está registrado.' };
     const salt = randomSalt();
     accs[k] = { name, salt, hash: await hash(pass, salt), created: Date.now() };
     if (!write(K_ACC, accs)) return { ok: false, error: 'El navegador no deja guardar datos (¿modo incógnito?).' };
@@ -625,11 +625,12 @@ G.DB = (() => {
   function authError(e) {
     const c = (e && e.code) || '';
     const M = {
-      'auth/email-already-in-use': 'Ese nombre ya existe.',
-      'auth/invalid-credential': 'Usuario o contraseña incorrectos.',
-      'auth/invalid-login-credentials': 'Usuario o contraseña incorrectos.',
-      'auth/wrong-password': 'Usuario o contraseña incorrectos.',
-      'auth/user-not-found': 'Usuario o contraseña incorrectos.',
+      'auth/email-already-in-use': 'Ya existe una cuenta con ese correo. Inicia sesión o recupera la contraseña.',
+      'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+      'auth/invalid-login-credentials': 'Correo o contraseña incorrectos.',
+      'auth/wrong-password': 'Correo o contraseña incorrectos.',
+      'auth/user-not-found': 'Correo o contraseña incorrectos.',
+      'auth/invalid-email': 'Escribe un correo electrónico válido.',
       'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
       'auth/too-many-requests': 'Demasiados intentos seguidos. Espera un poco.',
       'auth/network-request-failed': 'Sin conexión a internet.',
@@ -652,6 +653,9 @@ G.DB = (() => {
 
   let readyP = null;
 
+  const VALID_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailInputError = email => VALID_EMAIL.test(email) ? '' : 'Escribe un correo electrónico válido.';
+
   /** Arranca la base de datos y recupera la sesión anterior. → true si hay sesión. */
   function ready() {
     if (readyP) return readyP;
@@ -667,29 +671,50 @@ G.DB = (() => {
     return readyP;
   }
 
-  async function register(name, pass) {
+  async function register(email, pass, name) {
+    email = (email || '').trim().toLowerCase();
     name = (name || '').trim();
+    const emailError = emailInputError(email);
+    if (emailError) return { ok: false, error: emailError };
     if (!VALID.test(name)) return { ok: false, error: 'El nombre debe tener 3-16 letras, números o _.' };
     const min = mode === 'cloud' ? 6 : 4;
     if ((pass || '').length < min) return { ok: false, error: `La contraseña debe tener al menos ${min} caracteres.` };
-    if (mode === 'local') return registerLocal(name, pass);
+    if (mode === 'local') return registerLocal(email, name, pass);
     // Tope de cuentas del mes (Firebase cobra a partir de 50.000 al mes).
     try {
       const legacy = await legacySave(name, pass);
-      const cred = await auth.createUserWithEmailAndPassword(nameToEmail(name), pass);
+      const cred = await auth.createUserWithEmailAndPassword(email, pass);
       await openCloud(cred.user, { name, legacy });
       return { ok: true, isNew: !save.partner, imported: !!legacy };
     } catch (e) { return { ok: false, error: authError(e) }; }
   }
 
-  async function login(name, pass) {
-    name = (name || '').trim();
-    if (mode === 'local') return loginLocal(name, pass);
+  async function login(identifier, pass) {
+    identifier = (identifier || '').trim();
+    if (mode === 'local') return loginLocal(identifier, pass);
+    const legacyName = !identifier.includes('@') && VALID.test(identifier);
+    if (!VALID_EMAIL.test(identifier) && !legacyName) return { ok: false, error: 'Escribe un correo electrónico válido.' };
+    const email = legacyName ? nameToEmail(identifier) : identifier.toLowerCase();
     try {
-      const legacy = await legacySave(name, pass);
-      const cred = await auth.signInWithEmailAndPassword(nameToEmail(name), pass || '');
-      await openCloud(cred.user, { name, legacy });
+      const legacy = legacyName ? await legacySave(identifier, pass) : null;
+      const cred = await auth.signInWithEmailAndPassword(email, pass || '');
+      await openCloud(cred.user, legacyName ? { name: identifier, legacy } : {});
       return { ok: true, isNew: !save.partner, imported: !!legacy };
+    } catch (e) { return { ok: false, error: authError(e) }; }
+  }
+
+  async function resetPassword(identifier) {
+    identifier = (identifier || '').trim();
+    if (!identifier) return { ok: false, error: 'Escribe tu correo electrónico.' };
+    if (!identifier.includes('@') && VALID.test(identifier)) {
+      return { ok: false, error: 'Las cuentas antiguas creadas sólo con nombre no tienen un correo de recuperación. Entra con tu nombre anterior o con Google si vinculaste tu Gmail.' };
+    }
+    const emailError = emailInputError(identifier);
+    if (emailError) return { ok: false, error: emailError };
+    if (mode !== 'cloud') return { ok: false, error: 'La recuperación por correo sólo está disponible cuando Firebase está conectado.' };
+    try {
+      await auth.sendPasswordResetEmail(identifier.toLowerCase());
+      return { ok: true, message: 'Si ese correo tiene una cuenta, recibirás un enlace para cambiar la contraseña.' };
     } catch (e) { return { ok: false, error: authError(e) }; }
   }
 
@@ -754,6 +779,9 @@ G.DB = (() => {
   }
 
   function nameAccount() { return !!(auth && auth.currentUser && (auth.currentUser.email || '').endsWith('@' + NAME_DOMAIN)); }
+  function passwordAccount() {
+    return !!(auth && auth.currentUser && auth.currentUser.providerData.some(p => p.providerId === 'password'));
+  }
 
   /*
    * Recuperar la cuenta: las de nombre y contraseña no tienen correo de verdad
@@ -800,7 +828,7 @@ G.DB = (() => {
       // ese último paso: la cuenta quedaba vacía pero existía y su nombre no
       // se podía volver a usar.
       const cu = auth.currentUser;
-      if (nameAccount()) {
+      if (passwordAccount()) {
         if (!pass) return { ok: false, error: 'Escribe tu contraseña.' };
         await cu.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(cu.email, pass));
       } else {
@@ -843,7 +871,7 @@ G.DB = (() => {
   }
 
   return {
-    ready, register, login, loginWithGoogle, playAsGuest, logout, commit, deleteAccount, flush: pushNow,
+    ready, register, login, loginWithGoogle, resetPassword, playAsGuest, logout, commit, deleteAccount, flush: pushNow,
     owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf,
     onSync(fn) { listeners.add(fn); },
     onLeave(fn) { leaveHooks.push(fn); },
@@ -851,7 +879,9 @@ G.DB = (() => {
     get fb() { return mode === 'cloud' ? { auth, fs, rtdb, uid, emulator: !!(G.FIREBASE_CONFIG || {}).emulator } : null; },
     /** ¿Está disponible lo online (amigos, ranking, multijugador)? */
     get online() { return mode === 'cloud' && !guest && !!uid && !!save; },
-    /** ¿La cuenta es de usuario y contraseña (no de Google)? */
+    /** ¿La cuenta usa correo y contraseña? */
+    get passwordAccount() { return passwordAccount(); },
+    /** ¿La cuenta usa el sistema antiguo de nombre y contraseña? */
     get nameAccount() { return nameAccount(); },
     get hasGoogle() { return hasGoogle(); }, linkGoogle,
     get mode() { return mode; },

@@ -94,15 +94,19 @@
       <div class="tab on" data-tab="login">Entrar</div>
       <div class="tab" data-tab="register">Crear cuenta</div>
     </div>
-    <form id="login-form" autocomplete="off">
-      <label for="f-user">Nombre</label>
-      <input id="f-user" class="field" maxlength="16" spellcheck="false">
+    <form id="login-form" autocomplete="on">
+      <label for="f-email">Correo electrónico</label>
+      <input id="f-email" class="field" type="text" inputmode="email" autocomplete="email" maxlength="254" placeholder="tu@correo.com" required spellcheck="false" autocapitalize="none">
+      <p id="legacy-login-note" class="note">Las cuentas antiguas también pueden entrar con su nombre anterior.</p>
+      <div id="f-name-wrap" class="hidden">
+        <label for="f-name">Nombre de jugador</label>
+        <input id="f-name" class="field" maxlength="16" autocomplete="nickname" spellcheck="false">
+      </div>
       <label for="f-pass">Contraseña</label>
-      <input id="f-pass" class="field" type="password" maxlength="64">
+      <input id="f-pass" class="field" type="password" autocomplete="current-password" maxlength="64" required>
       <p id="login-err" class="err"></p>
       <p class="note"><a href="#" id="f-forgot">¿Olvidaste tu contraseña?</a></p>
-      <p id="forgot-note" class="note hidden">Si vinculaste tu Gmail, pulsa <b>Entrar con Google</b> con ese Gmail: es tu misma cuenta.
-        Si no lo vinculaste, no se puede recuperar: crea una cuenta nueva (y esta vez vincula tu Gmail desde el aviso que sale al entrar).</p>
+      <p id="forgot-note" class="note hidden" aria-live="polite"></p>
       <div class="row">
         <button id="btn-auth" class="btn gold grow" type="submit">Entrar</button>
       </div>
@@ -261,10 +265,9 @@
     <p>Código fuente: <a id="legal-repo" href="#" target="_blank" rel="noopener"></a></p>
     <p>Licencia del código: PolyForm Noncommercial 1.0.0 (se puede usar, estudiar y modificar, pero no para ganar dinero). Las versiones hasta el 14-10-2026 siguen bajo MIT.</p>
     <h3>Privacidad</h3>
-    <p>Si creas una cuenta, guardamos tu nombre de jugador y tu partida (colección, monedas,
+    <p>Si creas una cuenta, guardamos tu correo para identificarla y tu partida (colección, monedas,
       mejoras y estadísticas) en Google Firebase para que puedas seguir en cualquier ordenador.
-      Si entras con Google, Firebase guarda también tu correo de Google para identificarte
-      (nunca se enseña a otros jugadores).
+      Tu correo no se enseña a otros jugadores.
       No usamos tus datos para nada más, ni los compartimos, ni hay publicidad ni seguimiento.
       Como invitado no se guarda nada fuera de tu navegador.</p>
     <p>Amigos y ranking: tu <b>apodo</b> es público para otros jugadores. Guardamos tu lista de
@@ -322,7 +325,7 @@
   <div class="box" style="width:min(440px,100%)">
     <h2>Elige tu apodo</h2>
     <p class="sub">Es el nombre que verán tus amigos y el que sale en el ranking.
-      Tu nombre y tu correo de Google no se enseñan a nadie.</p>
+      Tu nombre y tu correo no se enseñan a nadie.</p>
     <form id="nick-form" autocomplete="off">
       <input id="nick-in" class="field" maxlength="16" spellcheck="false" placeholder="3-16 letras, números o _">
       <p id="nick-err" class="err"></p>
@@ -540,6 +543,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/app.min.js?v=dd4db6fc5b"></script>
+<script defer src="js/app.min.js?v=e68017a378"></script>
 </body>
 </html>

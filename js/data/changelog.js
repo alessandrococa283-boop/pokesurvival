@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-20', title: ['Acceso con correo y contraseña', 'Sign in with email and password'], new: [
+    ['Las cuentas nuevas se crean e inician sesión con correo electrónico y contraseña; el nombre de jugador se elige por separado. Puedes pedir un enlace para restablecer la contraseña. Las cuentas antiguas todavía admiten iniciar sesión con su nombre anterior.',
+     'New accounts use an email address and password; choose a separate player name. You can request a password reset link. Older accounts can still sign in with their previous name.']
+  ] },
   { d: '2026-10-20', title: ['Nueva etapa: PokéSurvival', 'A new chapter: PokéSurvival'], chg: [
     ['PokéSurvival inicia como un proyecto fan derivado e inspirado en PokéSurvivor, con repositorio y servicios propios. Se mantienen los avisos de licencia y los créditos de sus autores.',
      'PokéSurvival begins as a fan project derived from and inspired by PokéSurvivor, with its own repository and services. The license notices and creator credits are preserved.']

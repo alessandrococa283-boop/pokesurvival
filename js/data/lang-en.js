@@ -212,7 +212,16 @@ G.I18n.add({
   'Tickets del gacha': 'Gacha tickets', 'Nivel máximo': 'Max level',
 
   // ---------------- inicio de sesión y test ----------------
-  'Mundo Misterioso': 'Mystery Dungeon', 'Entrar': 'Log in', 'Crear cuenta': 'Sign up', 'Nombre': 'Name', 'Contraseña': 'Password',
+  'Mundo Misterioso': 'Mystery Dungeon', 'Entrar': 'Log in', 'Crear cuenta': 'Sign up', 'Nombre': 'Name', 'Nombre de jugador': 'Player name',
+  'Correo electrónico': 'Email address', 'tu@correo.com': 'you@example.com', 'Contraseña': 'Password',
+  'Las cuentas antiguas también pueden entrar con su nombre anterior.': 'Older accounts can also sign in with their previous name.',
+  'Correo y contraseña': 'Email and password', 'Ese correo ya está registrado.': 'That email is already registered.',
+  'Correo o contraseña incorrectos.': 'Incorrect email or password.', 'Escribe un correo electrónico válido.': 'Enter a valid email address.',
+  'Escribe tu correo electrónico.': 'Enter your email address.',
+  'Si ese correo tiene una cuenta, recibirás un enlace para cambiar la contraseña.': 'If an account exists for that email, you will receive a password reset link.',
+  'Enviando enlace de recuperación…': 'Sending recovery link…',
+  'Las cuentas antiguas creadas sólo con nombre no tienen un correo de recuperación. Entra con tu nombre anterior o con Google si vinculaste tu Gmail.': 'Older accounts created with a name only do not have a recovery email. Sign in with your old name or with Google if you linked your Gmail.',
+  'La recuperación por correo sólo está disponible cuando Firebase está conectado.': 'Email recovery is available only while Firebase is connected.',
   'Entrar con Google': 'Sign in with Google', 'Jugar como invitado': 'Play as guest', '3-16 letras, números o _': '3-16 letters, numbers or _',
   'Sobrevive a las hordas con tu compañero Pokémon · gratis, en PC y móvil': 'Survive the hordes with your partner Pokémon · free, on PC and mobile',
   'Juego de supervivencia con Pokémon, gratis en el navegador y en el móvil.': 'A Pokémon survival game, free in your browser and on mobile.',
@@ -358,7 +367,7 @@ G.I18n.add({
 
   // ---------------- amigos, sala e invitaciones ----------------
   'Elige tu apodo': 'Choose your nickname', 'Guardar apodo': 'Save nickname', 'Ahora no': 'Not now',
-  'Es el nombre que verán tus amigos y el que sale en el ranking. Tu nombre y tu correo de Google no se enseñan a nadie.': 'It\'s the name your friends will see and the one on the leaderboard. Your real name and Google email are never shown to anyone.',
+  'Es el nombre que verán tus amigos y el que sale en el ranking. Tu nombre y tu correo no se enseñan a nadie.': 'It\'s the name your friends will see and the one on the leaderboard. Your real name and email are never shown to anyone.',
   'Tu apodo:': 'Your nickname:', '· dáselo a tus amigos para que te añadan.': '· give it to your friends so they can add you.', 'Tu apodo es {x}': 'Your nickname is {x}',
   'Apodo de tu amigo': 'Your friend\'s nickname', 'Añadir amigo': 'Add friend', 'Aún no tienes amigos añadidos. Escribe arriba el apodo de un amigo.': 'You haven\'t added any friends yet. Type a friend\'s nickname above.',
   'Quiere ser tu amigo': 'Wants to be your friend', 'Solicitud enviada': 'Request sent', 'Desconectado': 'Offline', 'Jugando': 'Playing', 'En línea': 'Online',
@@ -447,7 +456,7 @@ G.I18n.add({
   'Contacto y retirada de contenido': 'Contact and content removal',
   'Si eres titular de derechos y quieres que retiremos algo, escríbenos y lo quitaremos lo antes posible:': 'If you are a rights holder and want something removed, write to us and we\'ll take it down as soon as possible:',
   'Código fuente:': 'Source code:', 'Privacidad': 'Privacy',
-  'Si creas una cuenta, guardamos tu nombre de jugador y tu partida (colección, monedas, mejoras y estadísticas) en Google Firebase para que puedas seguir en cualquier ordenador. Si entras con Google, Firebase guarda también tu correo de Google para identificarte (nunca se enseña a otros jugadores). No usamos tus datos para nada más, ni los compartimos, ni hay publicidad ni seguimiento. Como invitado no se guarda nada fuera de tu navegador.': 'If you create an account, we store your player name and your game (collection, coins, upgrades and stats) in Google Firebase so you can continue on any computer. If you sign in with Google, Firebase also stores your Google email to identify you (it is never shown to other players). We don\'t use your data for anything else, we don\'t share it, and there are no ads or tracking. As a guest, nothing is stored outside your browser.',
+  'Si creas una cuenta, guardamos tu correo para identificarla y tu partida (colección, monedas, mejoras y estadísticas) en Google Firebase para que puedas seguir en cualquier ordenador. Tu correo no se enseña a otros jugadores. No usamos tus datos para nada más, ni los compartimos, ni hay publicidad ni seguimiento. Como invitado no se guarda nada fuera de tu navegador.': 'If you create an account, we store your email to identify it and your game (collection, coins, upgrades and stats) in Google Firebase so you can continue on any computer. Your email is never shown to other players. We don\'t use your data for anything else, we don\'t share it, and there are no ads or tracking. As a guest, nothing is stored outside your browser.',
   'Amigos y ranking: tu': 'Friends and leaderboard: your',
   'es público para otros jugadores. Guardamos tu lista de amigos, si estás en línea y tus mejores tiempos (con tu apodo y tu Pokémon).': 'is public to other players. We store your friends list, whether you\'re online and your best times (with your nickname and your Pokémon).',
   'Partidas en grupo: tu navegador se conecta': 'Group games: your browser connects',

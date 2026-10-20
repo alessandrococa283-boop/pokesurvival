@@ -7,22 +7,34 @@ G.LoginUI = (() => {
     document.querySelectorAll('#scr-login .tab').forEach(t => {
       t.onclick = () => setMode(t.dataset.tab);
     });
+    setMode(mode);
     $('login-form').onsubmit = async e => {
       e.preventDefault();
       $('login-err').textContent = '';
       $('btn-auth').disabled = true;
-      const fn = mode === 'login' ? G.DB.login : G.DB.register;
-      const r = await fn($('f-user').value, $('f-pass').value);
-      $('btn-auth').disabled = false;
+      let r;
+      try {
+        r = mode === 'login'
+          ? await G.DB.login($('f-email').value, $('f-pass').value)
+          : await G.DB.register($('f-email').value, $('f-pass').value, $('f-name').value);
+      } catch (error) {
+        $('login-err').textContent = 'No se pudo completar el acceso: ' + (error.message || error);
+        return;
+      } finally { $('btn-auth').disabled = false; }
       if (!r.ok) { $('login-err').textContent = r.error; return; }
+      $('forgot-note').classList.add('hidden');
       $('f-pass').value = '';
       G.Flow.afterLogin();
     };
     $('btn-guest').onclick = () => { G.DB.playAsGuest(); G.Flow.afterLogin(); };
-    $('f-forgot').onclick = e => {
+    $('f-forgot').onclick = async e => {
       e.preventDefault();
+      if (mode !== 'login') setMode('login');
       $('login-err').textContent = '';
-      $('forgot-note').classList.toggle('hidden');
+      $('forgot-note').classList.remove('hidden');
+      $('forgot-note').textContent = 'Enviando enlace de recuperación…';
+      const r = await G.DB.resetPassword($('f-email').value);
+      $('forgot-note').textContent = r.ok ? r.message : r.error;
     };
     // Vincular Gmail para poder recuperar la cuenta (ver offerRecovery).
     $('rec-link').onclick = async () => {
@@ -42,15 +54,19 @@ G.LoginUI = (() => {
     $('btn-google').onclick = async () => {
       $('login-err').textContent = '';
       $('btn-google').disabled = true;
-      const r = await G.DB.loginWithGoogle();
-      $('btn-google').disabled = false;
+      let r;
+      try { r = await G.DB.loginWithGoogle(); }
+      catch (error) {
+        $('login-err').textContent = 'No se pudo iniciar sesión con Google: ' + (error.message || error);
+        return;
+      } finally { $('btn-google').disabled = false; }
       if (!r.ok) { $('login-err').textContent = r.error; return; }
       G.Flow.afterLogin();
     };
   }
 
   /**
-   * Al entrar (o recién creada la cuenta) con nombre y contraseña, si aún no
+   * Al entrar en una cuenta antigua de nombre y contraseña, si aún no
    * hay Gmail vinculado: "¿te da miedo perder tu cuenta?". Una vez por sesión,
    * hasta que lo vincule o diga que no le vuelvan a preguntar.
    */
@@ -80,7 +96,11 @@ G.LoginUI = (() => {
     mode = m;
     document.querySelectorAll('#scr-login .tab').forEach(t => t.classList.toggle('on', t.dataset.tab === m));
     $('btn-auth').textContent = m === 'login' ? 'Entrar' : 'Crear cuenta';
+    $('f-name-wrap').classList.toggle('hidden', m !== 'register');
+    $('legacy-login-note').classList.toggle('hidden', m !== 'login');
+    $('f-name').required = m === 'register';
     $('f-pass').autocomplete = m === 'login' ? 'current-password' : 'new-password';
+    $('forgot-note').classList.add('hidden');
     $('login-err').textContent = '';
   }
 
@@ -90,7 +110,7 @@ G.LoginUI = (() => {
     if (!G.DB.storageOk) $('login-err').textContent = 'Este navegador no deja guardar datos: juega como invitado.';
     $('btn-google').classList.toggle('hidden', G.DB.mode !== 'cloud');
     $('login-mode').textContent = modeNote();
-    setTimeout(() => $('f-user').focus(), 50);
+    setTimeout(() => $('f-email').focus(), 50);
   }
 
   return { init, open, offerRecovery };
