@@ -118,5 +118,25 @@ G.LevelUp = (() => {
     return picked;
   }
 
-  return { offer, STATS };
+  function offerEvolutionMove(pl, n = 3) {
+    const available = move => !pl.hasMove(move.id) && !pl.banned.has(move.id);
+    let pool = G.Moves.availableFor(pl.mon).filter(available);
+    if (!pool.length) pool = G.Moves.ALL.filter(available);
+    const picked = [];
+    while (picked.length < n && pool.length) {
+      const index = Math.floor(Math.random() * pool.length);
+      const move = pool.splice(index, 1)[0];
+      picked.push({
+        w: 1, type: 'evo', key: 'evolution-move:' + move.id,
+        icon: 'move:' + move.id, color: G.U.TYPE_COLOR[move.type], tag: 'Ataque extra',
+        title: move.name,
+        desc: `${move.desc} Se lanzará junto con ${pl.activeMove().name}.`,
+        apply: p => { p.addEvolutionMove(move.id); }
+      });
+    }
+    if (!picked.length) throw new Error(`No hay ataques extra disponibles para ${pl.mon.name}.`);
+    return picked;
+  }
+
+  return { offer, offerEvolutionMove, STATS };
 })();

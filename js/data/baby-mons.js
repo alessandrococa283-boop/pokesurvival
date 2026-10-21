@@ -23,5 +23,31 @@ G.BabyMons = (() => {
     { dex: 848, name: 'Toxel', rarity: 5, passive: 'Toxina eléctrica', description: 'Los ataques eléctricos tienen un 12 % de probabilidad de electrocutar al enemigo durante 1,5 segundos. Los enemigos electrocutados reciben un 10 % más de daño eléctrico durante ese efecto.' }
   ];
   const BY_DEX = Object.fromEntries(LIST.map(mon => [mon.dex, mon]));
-  return { LIST, BY_DEX, hatchMinutes };
+  const PASSIVE_BY_DEX = {
+    172: { paralyzeChance: 0.025, paralyzeDuration: 1 },
+    173: { healing: 0.03 },
+    174: { charmChance: 0.02, charmDuration: 2 },
+    175: { recoveryDrop: 0.03 },
+    298: { speed: 1.05, magnet: 1.03 },
+    360: { reflectChance: 0.04, reflectRate: 0.2 },
+    406: { statusDuration: 1.05 },
+    433: { area: 1.04 },
+    236: { meleeDamage: 1.06, lowHpMeleeDamage: 1.1 },
+    238: { slowChance: 0.05, slowFactor: 0.3, slowDuration: 2 },
+    239: { electricSpeed: 1.06, otherSpeed: 1.03 },
+    240: { burnDamage: 1.06, burnChance: 0.03 },
+    438: { damageReduction: 0.06, barrierRate: 0.02, barrierDelay: 3 },
+    439: { projectileReduction: 0.08, contactReduction: 0.04 },
+    440: { healing: 0.08, eliteHealChance: 0.05, eliteHealRate: 0.03 },
+    447: { crowdDamage: 1.08, crowdRange: 180 },
+    446: { experience: 1.12, itemHealing: 0.08 },
+    458: { waterHealChance: 0.1, waterHealRate: 0.02, waterHealCooldown: 2 },
+    848: { shockChance: 0.12, shockDuration: 1.5, electricDamage: 1.1 }
+  };
+  return {
+    LIST,
+    BY_DEX,
+    hatchMinutes,
+    passiveFor(dex) { return PASSIVE_BY_DEX[dex] || null; }
+  };
 })();

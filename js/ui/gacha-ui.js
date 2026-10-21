@@ -197,7 +197,9 @@ G.GachaUI = (() => {
     }
 
     const active = save.babyPartner && G.BabyMons.BY_DEX[save.babyPartner];
-    $('baby-active').textContent = active ? `Compañero bebé seleccionado: ${active.name} · ${active.passive}` : 'Aún no has elegido un compañero bebé.';
+    const activeLabel = $('baby-active');
+    activeLabel.textContent = active ? `Compañero bebé seleccionado: ${active.name} · ${active.passive}` : 'Aún no has elegido un compañero bebé.';
+    if (active) activeLabel.appendChild(babySprite(active.dex, 64));
     const collection = $('baby-collection');
     collection.innerHTML = '';
     if (!owned.length) collection.innerHTML = '<p class="sub">Tus compañeros aparecerán aquí al eclosionar sus huevos.</p>';

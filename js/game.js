@@ -219,11 +219,7 @@ G.Game = (() => {
       state = 'levelup';
       G.UI.hide('scr-pause');
       G.Audio.sfx('levelup');
-      G.RunUI.showLevelUp(level, G.LevelUp.offer(pl), card => {
-        G.Audio.sfx('confirm');
-        card.apply(pl);
-        G.Coop.localPicked();
-      }, true);
+      showLevelChoices(level, () => G.Coop.localPicked(), true);
     },
     waiting(names) { G.RunUI.setWaiting(names); },
     resume() {
@@ -388,11 +384,26 @@ G.Game = (() => {
     pendingLevels--;
     state = 'levelup';
     G.Audio.sfx('levelup');
-    G.RunUI.showLevelUp(pl.level, G.LevelUp.offer(pl), card => {
-      G.Audio.sfx('confirm');
-      card.apply(pl);
+    showLevelChoices(pl.level, () => {
       if (state === 'levelup') state = 'playing';
     });
+  }
+
+  function showLevelChoices(level, done, coop = false) {
+    if (pl.pendingEvolutionMoves > 0) {
+      pl.pendingEvolutionMoves--;
+      G.RunUI.showLevelUp(level, G.LevelUp.offerEvolutionMove(pl), card => {
+        G.Audio.sfx('confirm');
+        card.apply(pl);
+        showLevelChoices(level, done, coop);
+      }, coop, false);
+      return;
+    }
+    G.RunUI.showLevelUp(level, G.LevelUp.offer(pl), card => {
+      G.Audio.sfx('confirm');
+      card.apply(pl);
+      done();
+    }, coop);
   }
 
   // ---------------- vínculos ----------------
@@ -512,7 +523,7 @@ G.Game = (() => {
       return;
     }
     if (p.kind === 'heal') {
-      if (mine) pl.heal(pl.maxHp * 0.3);
+      if (mine) pl.heal(pl.maxHp * 0.3, 'pickup');
       G.FX.ring(who.x, who.y, 6, 60, '#5fe08a', 0.4, 3);
       return;
     }

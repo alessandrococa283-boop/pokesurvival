@@ -20,28 +20,66 @@ G.Combat = (() => {
 
   function tick(dt, pl, now) {
     if (pl.dead) return;
-    // Vínculos: todos los movimientos del hueco activo, cada uno con su recarga.
-    for (const m of pl.activeGroup()) tickMove(dt, pl, m, now);
+    const group = pl.activeGroup();
+    const primary = group.find(m => !m.evolutionExtra) || group[0];
+    let primaryFired = false;
+    for (const m of group) {
+      if (m.evolutionExtra) continue;
+      const fired = tickMove(dt, pl, m, now);
+      if (m === primary) primaryFired = fired;
+    }
+    for (const m of group) {
+      if (!m.evolutionExtra) continue;
+      if (!primary || primary.kind === 'orbit') { tickMove(dt, pl, m, now); continue; }
+      m.t = Math.max(0, m.t - dt);
+      if (primaryFired && m.t <= 0) {
+        m.t = dt;
+        tickMove(dt, pl, m, now, true);
+      }
+    }
   }
 
-  function tickMove(dt, pl, m, now) {
-    if (m.kind === 'orbit') { orbit(pl, m, dt, now); return; }
+  function tickMove(dt, pl, m, now, synchronized = false) {
+    if (m.kind === 'orbit') { orbit(pl, withBabyEffects(pl, m), dt, now); return false; }
 
     m.t -= dt;
-    if (m.t > 0) return;
+    if (m.t > 0) return false;
     // Los ataques que necesitan blanco esperan a tenerlo (no gastes animación al aire).
-    if (needsTarget(m) && !(pl.target && G.U.dist(pl.x, pl.y, pl.target.x, pl.target.y) <= reach(m))) {
+    if (!synchronized && needsTarget(m) && !(pl.target && G.U.dist(pl.x, pl.y, pl.target.x, pl.target.y) <= reach(m))) {
       m.t = 0.05;
-      return;
+      return false;
     }
-    m.t = Math.max(0.05, m.cd * pl.cdMul * pl.attackSpeedMul);
+    const baby = pl.babyPassive || {};
+    const speed = m.type === 'electric' ? baby.electricSpeed || 1 : baby.otherSpeed || 1;
+    m.t = Math.max(0.05, m.cd * pl.cdMul * pl.attackSpeedMul / speed);
     pl.cast(m);
     if (G.Coop.active) G.Coop.cast(pl, m);
     // Vínculo: su icono destella en el HUD al lanzarse (uno que explota pegado al
     // enemigo, como Ascuas tras Ataque Rápido, casi no se ve).
     m.castAt = performance.now();
 
-    run(pl, m);
+    run(pl, withBabyEffects(pl, m));
+    return true;
+  }
+
+  function withBabyEffects(pl, m) {
+    const baby = pl.babyPassive;
+    if (!baby) return m;
+    let damage = 1;
+    if (m.kind === 'melee' && baby.meleeDamage) {
+      damage *= baby.meleeDamage;
+      if (pl.hp / pl.maxHp < 0.3) damage *= baby.lowHpMeleeDamage / baby.meleeDamage;
+    }
+    if (baby.crowdDamage && G.EnemyMgr.queryCircle(pl.x, pl.y, baby.crowdRange).length >= 10) {
+      damage *= baby.crowdDamage;
+    }
+    const copy = Object.assign({}, m);
+    if (damage !== 1) copy.dmg *= damage;
+    if (baby.area) {
+      if (copy.radius) copy.radius *= baby.area;
+      if (copy.width) copy.width *= baby.area;
+    }
+    return copy;
   }
 
   function run(pl, m) {
@@ -566,13 +604,37 @@ G.Combat = (() => {
   function hit(pl, e, dmg, col, dx, dy, knock, m) {
     const k = typeK(m.type, e);
     const crit = isCrit(pl);
+    const baby = pl.babyPassive || {};
     dmg *= k * (crit ? CRIT_MUL + (pl.critDamageBonus || 0) : 1);
+    if (m.type === 'electric' && e.shockT > 0) dmg *= baby.electricDamage || 1;
     e.hurt(dmg, col, dx, dy, knock, crit ? 'crit' : G.Types.label(G.Types.mult(m.type, e.types)));
     if (!ghost) pl.onDealt(dmg, m.kind);
     pl.dmgDealt += dmg;
-    if (m.burn) e.applyBurn(m.burn);
-    if (m.poison) e.applyPoison(m.poison);
-    if (m.slow) e.applySlow(m.slow);
+    if (!ghost) {
+      e.lastHitType = m.type;
+      applyBabyStatuses(pl, e, m);
+    }
+  }
+
+  function applyBabyStatuses(pl, e, m) {
+    const baby = pl.babyPassive || {};
+    const duration = baby.statusDuration || 1;
+    if (m.burn) e.applyBurn(m.burn, 3 * duration, baby.burnDamage || 1);
+    if (m.poison) e.applyPoison(m.poison, 4 * duration);
+    if (m.slow) e.applySlow(m.slow, 1.2 * duration);
+    if (baby.paralyzeChance && Math.random() < baby.paralyzeChance) {
+      e.applySlow(0.8, (e.boss ? baby.paralyzeDuration * 0.35 : baby.paralyzeDuration) * duration);
+    }
+    if (baby.charmChance && Math.random() < baby.charmChance) e.applyCharm(baby.charmDuration);
+    if (baby.slowChance && Math.random() < baby.slowChance) {
+      e.applySlow(baby.slowFactor, baby.slowDuration * duration);
+    }
+    if (baby.burnChance && Math.random() < baby.burnChance) {
+      e.applyBurn(1, 3 * duration, baby.burnDamage || 1);
+    }
+    if (m.type === 'electric' && baby.shockChance && Math.random() < baby.shockChance) {
+      e.shockT = Math.max(e.shockT || 0, baby.shockDuration);
+    }
   }
 
   // ---------------- colisiones ----------------
@@ -600,7 +662,7 @@ G.Combat = (() => {
           continue;
         }
         if (G.U.dist2(p.x, p.y, pl.x, pl.y) < (p.r + pl.r) * (p.r + pl.r)) {
-          pl.hurt(p.dmg, p.mtype);
+          pl.hurt(p.dmg, p.mtype, false, 'projectile', p.owner || null);
           G.FX.burst(p.x, p.y - G.LIFT, p.color, 7, 110);
           projectiles.splice(i, 1);
         }
@@ -674,16 +736,17 @@ G.Combat = (() => {
         }
 
         const crit = isCrit(pl);
+        const baby = pl.babyPassive || {};
         const k = (p.mtype ? typeK(p.mtype, e) : 1) *
-                  (crit ? CRIT_MUL + (pl.critDamageBonus || 0) : 1);
+                  (crit ? CRIT_MUL + (pl.critDamageBonus || 0) : 1) *
+                  (p.mtype === 'electric' && e.shockT > 0 ? baby.electricDamage || 1 : 1);
         e.hurt(p.dmg * k, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), p.knock,
                crit ? 'crit' : p.mtype ? G.Types.label(G.Types.mult(p.mtype, e.types)) : null);
         if (Math.random() < 0.5) G.FX.sp('impact', p.vis ? p.vis.pal : 'normal', e.x, e.y - e.bodyH * 0.5, { life: 0.12, scale: 1 });
         pl.dmgDealt += p.dmg * k;
         pl.onDealt(p.dmg * k, p.kind);
-        if (p.burn) e.applyBurn(p.burn);
-        if (p.poison) e.applyPoison(p.poison);
-        if (p.slow) e.applySlow(p.slow);
+        e.lastHitType = p.mtype;
+        applyBabyStatuses(pl, e, p);
 
         if (!p.orb && p.bounces > 0 && bounceTo(p, e)) break;
         if (!p.orb) {
@@ -704,7 +767,7 @@ G.Combat = (() => {
       if (e.touchCd > 0 || e.behavior === 'thief') continue;
       e.touchCd = 0.55;
       e.strike(pl);
-      pl.hurt(e.dmg, e.atkType);
+      pl.hurt(e.dmg, e.atkType, false, 'contact', e);
       if (pl.hasItem('rockyhelmet')) e.hurt(15 + pl.level * 4, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80);
       const [nx, ny] = G.U.norm(e.x - pl.x, e.y - pl.y);
       e.kx += nx * 150; e.ky += ny * 150;

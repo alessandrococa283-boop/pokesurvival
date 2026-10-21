@@ -50,8 +50,9 @@
 
       this.flash = 0;
       this.slow = 0; this.slowT = 0;
-      this.burn = 0; this.burnT = 0; this.burnTick = 0;
+      this.burn = 0; this.burnT = 0; this.burnTick = 0; this.burnDamageMul = 1;
       this.poison = 0; this.poisonT = 0; this.poisonTick = 0;
+      this.shockT = 0; this.charmedT = 0; this.charmAttackT = 0;
       this.lavaTick = 0;
       this.kx = 0; this.ky = 0;
       this.touchCd = 0;
@@ -143,13 +144,18 @@
       this.slow = Math.max(this.slow, factor);
       this.slowT = Math.max(this.slowT, dur);
     }
-    applyBurn(stacks = 1) {
+    applyBurn(stacks = 1, dur = 3, damageMul = 1) {
       if (this.remote) { G.Coop.status(this, 'b', stacks); return; }
-      this.burn = Math.min(8, this.burn + stacks); this.burnT = 3;
+      this.burn = Math.min(8, this.burn + stacks); this.burnT = Math.max(this.burnT, dur);
+      this.burnDamageMul = Math.max(this.burnDamageMul, damageMul);
     }
-    applyPoison(stacks = 1) {
+    applyPoison(stacks = 1, dur = 4) {
       if (this.remote) { G.Coop.status(this, 'p', stacks); return; }
-      this.poison = Math.min(8, this.poison + stacks); this.poisonT = 4;
+      this.poison = Math.min(8, this.poison + stacks); this.poisonT = Math.max(this.poisonT, dur);
+    }
+    applyCharm(dur = 2) {
+      if (this.remote) return;
+      this.charmedT = Math.max(this.charmedT, dur);
     }
 
     die() {
@@ -256,14 +262,19 @@
       if (this.slowT > 0) { this.slowT -= dt; if (this.slowT <= 0) this.slow = 0; }
       if (this.burn > 0) {
         this.burnT -= dt; this.burnTick -= dt;
-        if (this.burnTick <= 0) { this.burnTick = 0.5; this.hurt(1.6 * this.burn * (1 + pl.level * 0.06), '#ff9a4d'); }
-        if (this.burnT <= 0) this.burn = 0;
+        if (this.burnTick <= 0) {
+          this.burnTick = 0.5;
+          this.hurt(1.6 * this.burnDamageMul * this.burn * (1 + pl.level * 0.06), '#ff9a4d');
+        }
+        if (this.burnT <= 0) { this.burn = 0; this.burnDamageMul = 1; }
       }
       if (this.poison > 0) {
         this.poisonT -= dt; this.poisonTick -= dt;
         if (this.poisonTick <= 0) { this.poisonTick = 0.6; this.hurt(this.maxHp * 0.012 * this.poison + 1, '#d47cf0'); }
         if (this.poisonT <= 0) this.poison = 0;
       }
+      if (this.shockT > 0) this.shockT -= dt;
+      if (this.charmedT > 0) this.charmedT -= dt;
       if (this.dead) return;
 
       // --- terreno ---
@@ -281,6 +292,33 @@
       const spd = this.spd * (1 - this.slow) * terrainMul * G.Weather.speedFor(this.types);
       let [dx, dy] = G.U.norm(pl.x - this.x, pl.y - this.y);
       const dist = G.U.dist(this.x, this.y, pl.x, pl.y);
+      if (this.charmedT > 0) {
+        let target = null, targetDist = 220;
+        for (const other of G.EnemyMgr.all()) {
+          if (other === this || other.dead || other.remote) continue;
+          const d = G.U.dist(this.x, this.y, other.x, other.y);
+          if (d < targetDist) { target = other; targetDist = d; }
+        }
+        if (target) {
+          this.charmAttackT -= dt;
+          if (targetDist <= this.r + target.r + 8) {
+            if (this.charmAttackT <= 0) {
+              this.charmAttackT = 0.5;
+              target.hurt(Math.max(1, this.dmg * 0.3), '#ff9ed8', target.x - this.x, target.y - this.y);
+            }
+            dx = dy = 0;
+          } else {
+            [dx, dy] = G.U.norm(target.x - this.x, target.y - this.y);
+          }
+          this.x += dx * spd * dt;
+          this.y += dy * spd * dt;
+          this.kx *= Math.pow(0.0015, dt); this.ky *= Math.pow(0.0015, dt);
+          if (!this.flying) G.World.collide(this);
+          this.anim.dir = G.Sprites.dirFromAngle(Math.atan2(dy, dx));
+          this.anim.loop(dx || dy ? 'Walk' : 'Idle', dx || dy ? Math.max(0.6, spd / 70) : 1);
+          return;
+        }
+      }
       // Duende del tesoro: huye de ti (en zigzag) en cuanto te acercas.
       if (this.behavior === 'thief') {
         this.zig = (this.zig || 0) + dt;
@@ -555,7 +593,7 @@
         const a = base + (n === 1 ? 0 : (i / (n - 1) - 0.5) * spread);
         const shot = G.Projectiles.spawn({
           x: this.x, y: this.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
-          dmg: this.shotDmg() * k, r: 7, life: 2.4, friendly: false, color: '#ff7a9e', mtype: type,
+          dmg: this.shotDmg() * k, r: 7, life: 2.4, friendly: false, color: '#ff7a9e', mtype: type, owner: this,
           vis: G.VFX.forType(type)
         });
         if (G.Coop.isHost) G.Coop.enemyShot(shot, type);

@@ -1,7 +1,9 @@
 /* ============ player.js — el Pokémon que controlas ============
- * (x, y) son los PIES. Cada Pokémon usa un único ataque automático. Cada
- * disparo reproduce la animación de Mundo Misterioso que le toca.
+ * (x, y) son los PIES. Cada Pokémon tiene un ataque automático y puede sumar
+ * ataques al evolucionar. Cada disparo usa su animación de Mundo Misterioso.
  */
+const BABY_SPRITES = new Map();
+
 G.Player = class Player {
   /**
    * @param mon   entrada de G.DEX
@@ -36,6 +38,13 @@ G.Player = class Player {
     this.slots = [];           // grupos de ataques para compatibilidad con el cooperativo
     this.active = 0;           // hueco activo
     this.maxMoves = 1;         // un ataque automático por Pokémon
+    this.evolutionMoves = [];
+    this.pendingEvolutionMoves = 0;
+    this.averageEvolutionBonusGranted = false;
+    const babyDex = G.DB && G.DB.save && G.DB.save.babyPartner;
+    this.babyDex = G.BabyMons.BY_DEX[babyDex] ? babyDex : null;
+    this.babyPassive = G.BabyMons.passiveFor(this.babyDex);
+    this.magnet *= this.babyPassive ? this.babyPassive.magnet || 1 : 1;
     this.bonds = 0;            // vínculos por usar (premio de los legendarios)
     this.projectileBonus = 0;
     this.pierceBonus = 0;
@@ -82,12 +91,25 @@ G.Player = class Player {
     this.statsTaken = {};      // veces que se eligió cada mejora de nivel
     this.passiveRegenT = 0;
     this.passiveKills = 0;
+    this.babyBarrierT = 0;
+    this.babyWaterHealT = 0;
     this.shieldHp = 0;
     this.shieldT = 0;
     this.abilityCooldowns = { dash: 0, shield: 0, ultimate: 0 };
     this.dashT = 0;
     this.dashDir = [Math.cos(this.moveAngle), Math.sin(this.moveAngle)];
     this.evolutionCount = 0;
+    this.startDex = mon.dex;
+    this.babyImage = null;
+    if (this.babyDex) {
+      this.babyImage = BABY_SPRITES.get(this.babyDex);
+      if (!this.babyImage) {
+        this.babyImage = new Image();
+        this.babyImage.src = `assets/huevos/sprites%20babymons/${this.babyDex}/Idle.png`;
+        this.babyImage.onerror = () => console.error(`[BabyCompanion] No se pudo cargar el sprite del Pokémon bebé ${this.babyDex}.`);
+        BABY_SPRITES.set(this.babyDex, this.babyImage);
+      }
+    }
   }
 
   /** Segundos que hay que estar junto a un compañero caído para levantarlo. */
@@ -106,7 +128,7 @@ G.Player = class Player {
     const s = this.baseSpd * this.spdMul * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (this.slowT > 0 ? 0.5 : 1);
     const w = G.Weather.speedFor(this.mon.types);
     const slow = this.inLiquid ? G.World.liquidEffect(this.mon.types).slow || 1 : 1;
-    return s * slow * w;
+    return s * slow * w * (this.babyPassive ? this.babyPassive.speed || 1 : 1);
   }
   get reduction() { return Math.min(0.8, this.dmgReduce + this.buffs.def.n * this.buffs.def.amount); }
   get regen() { return this.regenFlat + this.buffs.regen.n * this.buffs.regen.amount; }
@@ -138,8 +160,10 @@ G.Player = class Player {
       G.Moves.availableFor(mon).some(move => move.id === current.id);
     this.changeSpecies(mon);
     this.evolutionCount++;
+    this.pendingEvolutionMoves++;
     if (!keepCurrent) {
-      this.moves = [G.Moves.instance(G.Moves.attackFor(mon))];
+      const primary = G.Moves.instance(G.Moves.attackFor(mon));
+      this.moves = [primary, ...this.evolutionMoves];
       this.slots = [this.moves.slice()];
       this.active = 0;
       G.Projectiles.clearOrbs(this);
@@ -156,6 +180,14 @@ G.Player = class Player {
     if (evolution && !this.evolveTo(evolution.to)) {
       throw new Error('No se pudo evolucionar al Pokémon ' + this.dex + ' al nivel ' + this.level);
     }
+    if (!this.averageEvolutionBonusGranted && this.level >= G.EvolutionData.AVERAGE_LEVEL) {
+      const nextLevel = G.EvolutionData.nextLevel(this.dex);
+      const noEvolution = !G.EvolutionData.hasEvolution(this.startDex);
+      if (noEvolution || (nextLevel != null && nextLevel > G.EvolutionData.AVERAGE_LEVEL)) {
+        this.pendingEvolutionMoves++;
+        this.averageEvolutionBonusGranted = true;
+      }
+    }
     const heal = this.dex === 2 ? 0.02 : this.dex === 3 ? 0.03 : 0;
     if (heal) this.heal(this.maxHp * heal);
   }
@@ -169,9 +201,35 @@ G.Player = class Player {
       G.FX.ring(this.x, this.y, this.r, this.r * 3.2, '#82e8ff', 0.6, 4);
     }
     if (passive && passive.bossHeal && enemy.boss && !enemy.judge) this.heal(this.maxHp * passive.bossHeal);
+    const baby = this.babyPassive;
+    if (!baby) return;
+    if (baby.recoveryDrop && Math.random() < baby.recoveryDrop) G.Pickups.drop('heal', enemy.x, enemy.y);
+    if (baby.eliteHealChance && (enemy.boss || enemy.golden) && Math.random() < baby.eliteHealChance) {
+      this.heal(this.maxHp * baby.eliteHealRate);
+    }
+    if (baby.waterHealChance && enemy.lastHitType === 'water' && this.babyWaterHealT <= 0 &&
+        Math.random() < baby.waterHealChance) {
+      this.heal(this.maxHp * baby.waterHealRate);
+      this.babyWaterHealT = baby.waterHealCooldown;
+    }
   }
 
   // ---------------- movimientos ----------------
+  addEvolutionMove(id) {
+    if (this.hasMove(id) || !G.Moves.BY_ID[id]) return false;
+    const move = G.Moves.instance(id, 1);
+    move.evolutionExtra = true;
+    this.evolutionMoves.push(move);
+    this.moves.push(move);
+    const group = this.activeGroup();
+    if (group.length) group.push(move);
+    else {
+      this.slots = [[move]];
+      this.active = 0;
+    }
+    return true;
+  }
+
   addMove(id) {
     if (this.slots.length >= this.maxMoves || this.hasMove(id)) return false;
     const m = G.Moves.instance(id, 1);
@@ -300,7 +358,7 @@ G.Player = class Player {
    * @param type  tipo del ataque (tabla de tipos y clima); sin tipo, daño tal cual
    * @param pure  daño que no baja con la defensa ni el cuerpo a cuerpo (Arceus)
    */
-  hurt(amount, type = null, pure = false) {
+  hurt(amount, type = null, pure = false, sourceKind = null, source = null) {
     if (this.invuln > 0 || this.dead) return;
     let eff = null;
     if (type) {
@@ -311,7 +369,11 @@ G.Player = class Player {
     // Con un ataque cuerpo a cuerpo activo se recibe un 25 % menos: hay que
     // estar encima de los enemigos para pegar (iban muy por detrás).
     const close = this.activeGroup().some(m => m.kind === 'melee') ? 0.75 : 1;
-    let d = pure ? Math.max(1, amount) : Math.max(1, amount * (1 - this.reduction) * close);
+    const baby = this.babyPassive || {};
+    const sourceReduction = sourceKind === 'projectile' ? baby.projectileReduction || 0
+      : sourceKind === 'contact' ? baby.contactReduction || 0 : 0;
+    let d = pure ? Math.max(1, amount) : Math.max(1, amount *
+      (1 - Math.min(0.8, this.reduction + (baby.damageReduction || 0) + sourceReduction)) * close);
     if (this.shieldT > 0 && this.shieldHp > 0) {
       const absorbed = Math.min(this.shieldHp, d);
       this.shieldHp -= absorbed;
@@ -323,12 +385,17 @@ G.Player = class Player {
       }
     }
     this.hp -= d;
+    this.babyBarrierT = 0;
     this.invuln = 0.45;
     this.flash = 0.14;
     G.Audio.sfx('hurt');
     G.Camera.kick(0.28);
     G.FX.dmgText(this.x, this.y - this.bodyH - 4, '-' + Math.round(d), eff === 'super' ? '#ff3048' : eff === 'weak' ? '#c9a0a8' : '#ff6b7a', eff === 'super');
     G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#ff5f6d', 6, 90);
+    const reflected = d * (baby.reflectRate || 0);
+    if (source && reflected >= 1 && baby.reflectChance && Math.random() < baby.reflectChance) {
+      source.hurt(reflected, '#9fd8ff', this.x - source.x, this.y - source.y);
+    }
     // Banda Focus: aguanta el golpe con 1 de vida (una vez cada 60 s).
     if (this.hp <= 0 && this.hasItem('focussash') && performance.now() - this.sashT > 60000) {
       this.sashT = performance.now();
@@ -344,11 +411,17 @@ G.Player = class Player {
     }
   }
 
-  heal(amount) {
+  heal(amount, source = 'general') {
     const before = this.hp;
+    amount *= this.healingMultiplier(source);
     this.hp = Math.min(this.maxHp, this.hp + amount);
     const got = Math.round(this.hp - before);
     if (got >= 1) G.FX.dmgText(this.x, this.y - this.bodyH - 6, '+' + got, '#5fe08a');
+  }
+
+  healingMultiplier(source = 'general') {
+    const baby = this.babyPassive || {};
+    return 1 + (baby.healing || 0) + (source === 'pickup' ? baby.itemHealing || 0 : 0);
   }
 
   addMaxHp(amount) {
@@ -359,7 +432,8 @@ G.Player = class Player {
 
   /** Devuelve cuántos niveles ha subido (pueden ser varios de golpe). */
   gainXp(amount) {
-    this.xp += amount * this.xpMul * G.AbilityData.xpMultiplier(G.Game.st.time);
+    this.xp += amount * this.xpMul * (this.babyPassive ? this.babyPassive.experience || 1 : 1) *
+      G.AbilityData.xpMultiplier(G.Game.st.time);
     let leveled = 0;
     while (this.xp >= this.xpNext) {
       this.xp -= this.xpNext;
@@ -415,10 +489,25 @@ G.Player = class Player {
       if (b.n > 0) { b.t -= dt; if (b.t <= 0) b.n = 0; }
     }
     if (this.slowT > 0) this.slowT -= dt;
-    if (this.bellHeal > 0) { const h = Math.min(this.bellHeal, 4 * dt); this.hp = Math.min(this.maxHp, this.hp + h); this.bellHeal -= h; }
+    if (this.babyWaterHealT > 0) this.babyWaterHealT -= dt;
+    if (this.bellHeal > 0) {
+      const h = Math.min(this.bellHeal, 4 * dt);
+      this.hp = Math.min(this.maxHp, this.hp + h * this.healingMultiplier());
+      this.bellHeal -= h;
+    }
     if (this.power && (this.power.t -= dt) <= 0) { this.power.def.off(this); this.power = null; }
-    if (this.regen > 0) this.hp = Math.min(this.maxHp, this.hp + this.regen * dt);
+    if (this.regen > 0) this.hp = Math.min(this.maxHp,
+      this.hp + this.regen * this.healingMultiplier() * dt);
     if (this.shieldT > 0 && (this.shieldT -= dt) <= 0) this.shieldHp = 0;
+    if (this.babyPassive && this.babyPassive.barrierRate && this.shieldT <= 0) {
+      this.babyBarrierT += dt;
+      if (this.babyBarrierT >= this.babyPassive.barrierDelay) {
+        this.shieldHp = this.maxHp * this.babyPassive.barrierRate;
+        this.shieldT = 3;
+        this.babyBarrierT = 0;
+        G.FX.ring(this.x, this.y, this.r, this.r * 2.8, '#9fd8ff', 0.45, 3);
+      }
+    }
     G.ActiveAbilities.update(this, dt);
     const passive = G.PassiveData.get(this.dex);
     if (passive && passive.regen) {
@@ -553,6 +642,20 @@ G.Player = class Player {
       ctx.restore();
     }
     G.Sprites.drawShadow(ctx, this.dex, this.x, this.y);
+    if (this.babyImage && this.babyImage.complete && this.babyImage.naturalWidth && !this.dead && !this.remote) {
+      const frameW = this.babyImage.naturalWidth / 4;
+      const frameH = this.babyImage.naturalHeight / 8;
+      const frame = Math.floor(performance.now() / 220) % 4;
+      const size = Math.max(14, this.bodyH * 0.7);
+      const bx = this.x - Math.cos(this.moveAngle) * 23;
+      const by = this.y - Math.sin(this.moveAngle) * 14;
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      ctx.globalAlpha = 0.95;
+      ctx.drawImage(this.babyImage, frame * frameW, 0, frameW, frameH,
+        bx - size / 2, by - size, size, size);
+      ctx.restore();
+    }
     // Poder de altar: aro de su color latiendo bajo los pies.
     if (this.power && !this.dead) {
       ctx.save();

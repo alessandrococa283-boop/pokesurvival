@@ -1,7 +1,7 @@
 /* ============ run-ui.js — cartas de nivel, pausa y fin de run ============ */
 G.RunUI = (() => {
   const $ = G.UI.$;
-  let offers = null, offerCb = null, coopMode = false;
+  let offers = null, offerCb = null, coopMode = false, allowReroll = true;
   let initialMoves = null, initialMoveCb = null;
 
   function showInitialMove(mon, list, cb) {
@@ -35,11 +35,14 @@ G.RunUI = (() => {
 
   function showPassiveInfo(pl) {
     const passive = G.PassiveData.get(pl.dex);
-    $('passive-title').textContent = passive ? passive.name : 'Pasiva no implementada';
-    $('passive-level').textContent = passive ? 'Nivel ' + passive.level : '—';
-    $('passive-desc').textContent = passive
-      ? passive.description
-      : 'Este Pokémon todavía no tiene una pasiva innata implementada.';
+    const baby = pl.babyDex && G.BabyMons.BY_DEX[pl.babyDex];
+    $('passive-title').textContent = passive ? passive.name : baby ? baby.passive : 'Pasiva no implementada';
+    $('passive-level').textContent = passive ? 'Nivel ' + passive.level
+      : baby ? 'Compañero bebé: ' + baby.name : '—';
+    $('passive-desc').textContent = [
+      passive ? passive.description : baby ? '' : 'Este Pokémon todavía no tiene una pasiva innata implementada.',
+      baby ? `${baby.name} · ${baby.passive}: ${baby.description}` : ''
+    ].filter(Boolean).join(' ');
     G.UI.show('scr-passive');
   }
 
@@ -47,9 +50,12 @@ G.RunUI = (() => {
   $('passive-close').onclick = closePassiveInfo;
 
   /** @param coop  en grupo: tras elegir, se queda esperando a los demás */
-  function showLevelUp(level, list, cb, coop = false) {
-    offerCb = cb; coopMode = coop;
+  function showLevelUp(level, list, cb, coop = false, canReroll = true) {
+    offerCb = cb; coopMode = coop; allowReroll = canReroll;
     $('lvl-num').textContent = level;
+    $('lvl-hint').innerHTML = list.every(card => card.type === 'evo')
+      ? '¡La evolución te permite aprender un ataque extra! · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>'
+      : 'Elige una recompensa · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>';
     $('lvl-wait').textContent = '';
     $('lvl-wait').classList.toggle('hidden', !coop);
     $('cards').classList.remove('done');
@@ -63,13 +69,14 @@ G.RunUI = (() => {
    * derrotado (en grupo cuentan los jefes del equipo; cada uno tiene los suyos).
    */
   function rerollsLeft() {
+    if (!allowReroll) return 0;
     const p = G.Game.player;
     // 1 gratis + los comprados en Mejoras (antes, 1 más por cada jefe).
     return p ? Math.max(0, 1 + (p.rerollBonus || 0) - (p.rerolls || 0)) : 0;
   }
 
   function reroll() {
-    if (!offers || rerollsLeft() <= 0) return;
+    if (!offers || !allowReroll || rerollsLeft() <= 0) return;
     const p = G.Game.player;
     p.rerolls = (p.rerolls || 0) + 1;
     G.Audio.sfx('select');

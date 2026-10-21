@@ -24,6 +24,9 @@ G.EvolutionData = (() => {
     118: [119, 33], 129: [130, 20], 138: [139, 40], 140: [141, 40],
     147: [148, 30], 148: [149, 55]
   };
+  const AVERAGE_LEVEL = Math.round(
+    Object.values(LEVEL).reduce((sum, entry) => sum + entry[1], 0) / Object.keys(LEVEL).length
+  );
 
   function isBase(dex) {
     return dex >= 1 && dex <= 151 && !Object.prototype.hasOwnProperty.call(PARENTS, dex);
@@ -34,5 +37,18 @@ G.EvolutionData = (() => {
     return entry && level >= entry[1] ? { from: dex, to: entry[0], level: entry[1] } : null;
   }
 
-  return { isBase, next };
+  function hasEvolution(dex) {
+    let current = dex;
+    while (LEVEL[current]) {
+      current = LEVEL[current][0];
+      if (current === dex) return false;
+    }
+    return current !== dex;
+  }
+
+  function nextLevel(dex) {
+    return LEVEL[dex] ? LEVEL[dex][1] : null;
+  }
+
+  return { isBase, next, hasEvolution, nextLevel, AVERAGE_LEVEL };
 })();

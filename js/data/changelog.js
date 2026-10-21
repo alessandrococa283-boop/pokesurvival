@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-21', title: ['Compañeros bebé y ataques de evolución', 'Baby Companions and Evolution Attacks'], new: [
+    ['Al evolucionar eliges un ataque extra que se lanza junto al principal. Los Pokémon sin evolución y los que evolucionan a niveles altos reciben una elección adicional al nivel evolutivo medio. Los compañeros bebé ya aparecen junto al jugador y sus pasivas tienen efecto durante la partida.',
+     'When a Pokémon evolves, choose an extra attack that launches alongside its main attack. Pokémon without evolutions and those that evolve at high levels receive an extra choice at the average evolution level. Baby companions now appear beside the player and their passives work during runs.']
+  ] },
   { d: '2026-10-20', title: ['Gacha de compañeros bebé', 'Baby Companion Gacha'], new: [
     ['Ya puedes conseguir huevos bebé con un ticket morado y 700 monedas. El tiempo de incubación depende de la rareza; al eclosionar, el Pokémon se añade a tu colección y puedes elegir un compañero bebé.',
      'You can now get baby Pokémon eggs with one purple ticket and 700 coins. Incubation time depends on rarity; after hatching, the Pokémon joins your collection and you can select a baby companion.'],
