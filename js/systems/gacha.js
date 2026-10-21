@@ -2,29 +2,34 @@
  * Lógica pura: no toca la interfaz. La pantalla está en ui/gacha-ui.js.
  *
  * 9 banners (Kanto ... Paldea). Cada uno con su propio pity.
- * Probabilidades por tirada:  1★ 45% · 2★ 30% · 3★ 17% · 4★ 6.5% · 5★ 1.5%
+ * Probabilidades por tirada:  1★ 65% · 2★ 23% · 3★ 9% · 4★ 2.5% · 5★ 0.5%
  * Garantías:
  *   - la tirada ×10 trae al menos un 4★ o superior
  *   - a las 70 tiradas sin 5★ en ese banner, el siguiente es 5★ seguro
  * Shiny: 1 de cada 100 tiradas sale en su versión shiny.
  * Repetidos: se convierten en Pokémonedas (los shiny repetidos, el triple).
  *
- * Se tira con TICKETS (se consiguen jugando):
- *   ×1   1 ticket
- *   ×10  10 tickets normales, o 1 ticket ×10 (eliges con qué)
+ * Cada tirada consume tickets y monedas. Los tickets ×10 antiguos conservan
+ * su equivalencia de diez tickets normales.
  */
 G.Gacha = (() => {
-  /** ¿Qué gasta una tirada de n? → { t1, t10 } o null si no te llega. */
-  /** @param use  't1' (tickets normales) o 't10' (un ticket ×10, sólo para la ×10) */
+  const cfg = G.Acquisition.gacha;
+  let pulling = false;
+
+  /** Devuelve el coste completo si el saldo permite pagarlo; no modifica el guardado. */
   function costOf(save, n, use = 't1') {
+    if (!save || (n !== 1 && n !== 10) || (use !== 't1' && use !== 't10') || (n === 1 && use !== 't1')) return null;
+    const price = n === 1 ? cfg.costs.single : cfg.costs.ten;
     const t = save.tickets || { t1: 0, t10: 0 };
-    if (n === 10 && use === 't10') return t.t10 >= 1 ? { t1: 0, t10: 1 } : null;
-    return t.t1 >= n ? { t1: n, t10: 0 } : null;
+    const cost = n === 1 || use === 't1'
+      ? { t1: price.t1, t10: 0, coins: price.coins }
+      : { t1: 0, t10: price.t10, coins: price.coins };
+    return t.t1 >= cost.t1 && t.t10 >= cost.t10 && save.coins >= cost.coins ? cost : null;
   }
-  const RATES = [[1, 45], [2, 30], [3, 17], [4, 6.5], [5, 1.5]];
-  const PITY_5 = 70;
-  const SHINY_RATE = 1 / 100;
-  const REFUND = { 1: 15, 2: 30, 3: 60, 4: 120, 5: 300 };
+  const RATES = cfg.rates;
+  const PITY_5 = cfg.pityFive;
+  const SHINY_RATE = cfg.shinyRate;
+  const REFUND = cfg.duplicateRefund;
   let forceShiny = 0;           // para pruebas y vídeos: las N próximas salen shiny
 
   const RARITY_NAME = { 1: 'Común', 2: 'Poco común', 3: 'Rara', 4: 'Épica', 5: 'Legendaria' };
@@ -47,24 +52,23 @@ G.Gacha = (() => {
   /** Pokémon de una rareza en un banner. */
   function pool(rarity, gen) { return G.DEX.filter(p => inBanner(p, gen) && p.rarity === rarity); }
 
-  /** Pool no vacío más cercano (algunas generaciones tienen rarezas casi vacías). */
-  function poolNear(rarity, gen) {
-    for (const d of [0, -1, 1, -2, 2, -3, 3, -4, 4]) {
-      const r = rarity + d;
-      if (r < 1 || r > 5) continue;
-      const p = pool(r, gen);
-      if (p.length) return { rarity: r, list: p };
-    }
-    return { rarity, list: G.DEX.filter(p => inBanner(p, gen)) };
+  function ratesFor(gen, min = 1) {
+    const available = RATES.filter(([rarity]) => rarity >= min && pool(rarity, gen).length);
+    const total = available.reduce((sum, [, weight]) => sum + weight, 0);
+    return total ? available.map(([rarity, weight]) => [rarity, weight * 100 / total]) : [];
   }
 
-  function rollRarity(min = 1) {
-    const rates = RATES.filter(([r]) => r >= min);
-    const total = rates.reduce((a, [, w]) => a + w, 0);
+  function rollRarity(gen, min = 1) {
+    const rates = ratesFor(gen, min);
+    const total = rates.reduce((sum, [, weight]) => sum + weight, 0);
+    if (!total) return null;
     let x = Math.random() * total;
     for (const [r, w] of rates) { x -= w; if (x <= 0) return r; }
     return rates[rates.length - 1][0];
   }
+
+  function canGuaranteeTen(gen) { return ratesFor(gen, cfg.tenGuaranteeRarity).length > 0; }
+  function hasLegendary(gen) { return pool(5, gen).length > 0; }
 
   /** Los 3 más fuertes de la generación, para el cartel del banner. */
   function featured(gen) {
@@ -74,57 +78,65 @@ G.Gacha = (() => {
 
   /**
    * Hace `n` tiradas en el banner `gen` sobre el guardado `save` (lo modifica).
-   * Devuelve null si no hay monedas, o la lista de resultados:
+   * Devuelve null si no hay recursos suficientes o no hay especies en el banner:
    *   { dex, rarity, shiny, isNew, refund }
    */
   function pull(save, n, gen = 1, use = 't1') {
+    if (pulling) return null;
     const cost = costOf(save, n, use);
-    if (!cost) return null;
-    save.tickets.t1 -= cost.t1;
-    save.tickets.t10 -= cost.t10;
-    save.pity = save.pity || {};
-    save.shiny = save.shiny || {};
-    save.pity[gen] = save.pity[gen] || 0;
+    if (!cost || !BANNERS[gen - 1] || !G.DEX.some(p => inBanner(p, gen))) return null;
+    pulling = true;
+    try {
+      save.tickets = save.tickets || { t1: 0, t10: 0 };
+      save.tickets.t1 -= cost.t1;
+      save.tickets.t10 -= cost.t10;
+      save.coins -= cost.coins;
+      save.pity = save.pity || {};
+      save.shiny = save.shiny || {};
+      save.pity[gen] = save.pity[gen] || 0;
 
-    const out = [];
-    for (let i = 0; i < n; i++) {
-      save.pity[gen]++;
-      let want;
-      if (save.pity[gen] >= PITY_5) want = 5;
-      else if (n === 10 && i === n - 1 && !out.some(r => r.rarity >= 4)) want = rollRarity(4);
-      else want = rollRarity();
+      const out = [];
+      for (let i = 0; i < n; i++) {
+        if (hasLegendary(gen)) save.pity[gen]++;
+        let want;
+        if (hasLegendary(gen) && save.pity[gen] >= PITY_5) want = 5;
+        else if (n === 10 && i === n - 1 && !out.some(r => r.rarity >= cfg.tenGuaranteeRarity) && canGuaranteeTen(gen))
+          want = rollRarity(gen, cfg.tenGuaranteeRarity);
+        else want = rollRarity(gen);
 
-      const { rarity, list } = poolNear(want, gen);
-      if (rarity === 5) save.pity[gen] = 0;
-      let mon = G.U.pick(list);
-      let shiny = G.Sprites.hasShiny(mon.dex) && (forceShiny > 0 ? (forceShiny--, true) : Math.random() < SHINY_RATE);
-      // Los shiny no se repiten: si ya tienes ese, sale otro de la misma rareza
-      // cuyo shiny te falte; si los tienes todos, sale normal.
-      if (shiny && save.shiny[mon.dex]) {
-        const missing = list.filter(p => G.Sprites.hasShiny(p.dex) && !save.shiny[p.dex]);
-        if (missing.length) mon = G.U.pick(missing);
-        else shiny = false;
+        const list = pool(want, gen);
+        if (!list.length) throw new Error(`No hay Pokémon de rareza ${want} en el banner ${gen}.`);
+        if (want === 5) save.pity[gen] = 0;
+        let mon = G.U.pick(list);
+        let shiny = G.Sprites.hasShiny(mon.dex) && (forceShiny > 0 ? (forceShiny--, true) : Math.random() < SHINY_RATE);
+        if (shiny && save.shiny[mon.dex]) {
+          const missing = list.filter(p => G.Sprites.hasShiny(p.dex) && !save.shiny[p.dex]);
+          if (missing.length) mon = G.U.pick(missing);
+          else shiny = false;
+        }
+
+        let isNew = false, refund = 0;
+        if (shiny) {
+          isNew = !save.shiny[mon.dex];
+          if (isNew) save.shiny[mon.dex] = { at: Date.now(), from: 'gacha' };
+          else refund = REFUND[want] * cfg.shinyDuplicateMultiplier;
+          if (!save.owned[mon.dex]) save.owned[mon.dex] = { at: Date.now(), from: 'gacha' };
+        } else {
+          isNew = !save.owned[mon.dex];
+          if (isNew) save.owned[mon.dex] = { at: Date.now(), from: 'gacha' };
+          else refund = REFUND[want];
+        }
+        save.coins += refund;
+        out.push({ dex: mon.dex, rarity: want, shiny, isNew, refund });
       }
-
-      let isNew = false, refund = 0;
-      if (shiny) {
-        isNew = !save.shiny[mon.dex];
-        if (isNew) save.shiny[mon.dex] = { at: Date.now(), from: 'gacha' };
-        else refund = REFUND[rarity] * 3;
-        if (!save.owned[mon.dex]) save.owned[mon.dex] = { at: Date.now(), from: 'gacha' };
-      } else {
-        isNew = !save.owned[mon.dex];
-        if (isNew) save.owned[mon.dex] = { at: Date.now(), from: 'gacha' };
-        else refund = REFUND[rarity];
-      }
-      save.coins += refund;
-      out.push({ dex: mon.dex, rarity, shiny, isNew, refund });
+      save.stats.pulls = (save.stats.pulls || 0) + n;
+      return out;
+    } finally {
+      pulling = false;
     }
-    save.stats.pulls = (save.stats.pulls || 0) + n;
-    return out;
   }
 
   return { debugForceShiny(n = 1) { forceShiny = n; },
            costOf, RATES, PITY_5, SHINY_RATE, REFUND, RARITY_NAME, RARITY_COLOR, BANNERS,
-           pool, featured, pull };
+           pool, ratesFor, canGuaranteeTen, hasLegendary, featured, pull };
 })();

@@ -6,6 +6,12 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-20', title: ['Gacha y economía de tickets', 'Gacha and Ticket Economy'], chg: [
+    ['El gacha ahora cuesta tickets y Pokémonedas: 10 tickets y 2.000 monedas por Pokémon, o 100 tickets y 20.000 monedas por diez. Los tickets ×10 antiguos siguen siendo válidos; las probabilidades se ajustan a las rarezas disponibles en cada banner y se muestran en pantalla.',
+     'The gacha now costs tickets and Pokécoins: 10 tickets and 2,000 coins per Pokémon, or 100 tickets and 20,000 coins for ten. Existing ×10 tickets remain valid; probabilities adapt to the rarities available in each banner and are shown on screen.'],
+    ['Se redujeron las recompensas de tickets de misiones y logros, además de las de cofres, jefes y eventos. Los saldos existentes se conservan.',
+     'Ticket rewards from missions and achievements, chests, bosses and events were reduced. Existing balances are preserved.']
+  ] },
   { d: '2026-10-20', title: ['Combate, habilidades y evoluciones', 'Combat, Abilities and Evolutions'], new: [
     ['Antes de empezar eliges un ataque compatible con el tipo y la rareza de tu Pokémon. Durante la partida puedes usar el dash, el escudo, la pasiva y la habilidad definitiva; la experiencia aumenta con el tiempo.',
      'Before a run, choose an attack compatible with your Pokémon’s type and rarity. During the run, use dash, shield, passive and ultimate abilities; experience gain scales over time.'],

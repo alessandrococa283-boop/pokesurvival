@@ -102,7 +102,7 @@ G.Events = (() => {
   // ---------------- duende del tesoro ----------------
 
   function spawnThief(players, time) {
-    const gold = Math.random() < 0.25;
+    const gold = Math.random() < G.Acquisition.tickets.treasureBundleChance;
     const dex = gold ? 1000 : 52;
     const mon = G.DEX_BY[dex];
     if (!mon || !G.SPRITE_META[dex]) return;
@@ -204,7 +204,8 @@ G.Events = (() => {
   function rescued() {
     const L = lost;
     for (let i = 0; i < 12; i++) G.Pickups.drop('coin', L.tx + G.U.rand(-40, 40), L.ty + G.U.rand(-30, 30), 5);
-    G.Pickups.drop('ticket', L.tx, L.ty - 12, 1);
+    if (Math.random() < G.Acquisition.tickets.lostPokemonTicketChance)
+      G.Pickups.drop('ticket', L.tx, L.ty - 12, G.Acquisition.tickets.lostPokemonTicketAmount);
     if (G.Coop.isHost) G.Coop.broadcast(['ev', 'rw', L.dex, L.grant ? 1 : 0]);
     reward(L.dex, L.grant);
     lost = null;

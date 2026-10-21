@@ -23,10 +23,7 @@ G.Pickups = (() => {
     ticket10: { color: '#c47bff', glow: '#8a3fd0', r: 8 },
     item:     { color: '#ffd23f', glow: '#c08a10', r: 9 }       // value = id del objeto
   };
-  /** Probabilidad de que un Pokémon normal suelte un ticket del gacha. */
-  const BOSS_T10 = 1 / 3;               // ticket ×10 de un jefe normal
-  const LEGEND_T10 = 1 / 2;             // ticket ×10 del legendario de la grieta
-  const TICKET_RATE = 1 / 400;          // (antes 1/260; más raros desde 2026-10-10)
+  const ticketCfg = G.Acquisition.tickets;
 
   function clear() { list = []; }
   function all() { return list; }
@@ -80,13 +77,13 @@ G.Pickups = (() => {
       if (plain) return;
       push(orb('heal', x + 24, y, 0));
       push(orb('magnet', x - 24, y, 0));
-      // Ticket ×10: siempre el legendario de la grieta; un jefe normal, 1 de cada 3 veces.
-      // (Hasta el 12-10-2026 el legendario de la grieta daba siempre 2: salían demasiados.)
-      if (Math.random() < (legend ? LEGEND_T10 : BOSS_T10)) push(orb('ticket10', x, y - 20, 1));
+      if (Math.random() < (legend ? ticketCfg.riftLegendBundleChance : ticketCfg.bossBundleChance))
+        push(orb('ticket10', x, y - 20, legend ? ticketCfg.riftLegendBundleAmount : ticketCfg.bossBundleAmount));
       return;
     }
     push(orb(value >= 20 ? 'xpBig' : 'xp', x, y, value));
-    if (Math.random() < TICKET_RATE) push(orb('ticket', x + G.U.rand(-6, 6), y, 1));
+    if (Math.random() < ticketCfg.normalEnemyChance)
+      push(orb('ticket', x + G.U.rand(-6, 6), y, ticketCfg.normalEnemyAmount));
 
     // Drops ocasionales.
     const r = Math.random();

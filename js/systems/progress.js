@@ -86,7 +86,7 @@ G.Progress = (() => {
     const s = G.DB.save;
     if (!s || m.claimed || !done(m)) return false;
     m.claimed = true;
-    grant(G.MissionDefs.BY[m.id].reward);
+    grant(G.MissionDefs.BY[m.id].reward, 'mission');
     s.stats.missionsDone = (s.stats.missionsDone || 0) + 1;
     event('missionDone', { daily: !weekly });
     G.DB.commit(true);
@@ -109,21 +109,33 @@ G.Progress = (() => {
     return true;
   }
 
-  function grant(r) {
+  function effectiveReward(r, source = 'mission') {
+    if (!r) return {};
+    const multiplier = source === 'achievement'
+      ? G.Acquisition.rewardMultipliers.achievementTickets
+      : G.Acquisition.rewardMultipliers.missionTickets;
+    const units = (r.t1 || 0) + (r.t10 || 0) * G.Acquisition.tickets.unitsPerBundle;
+    return Object.assign({}, r, {
+      t1: units ? Math.max(1, Math.floor(units * multiplier)) : 0,
+      t10: 0
+    });
+  }
+
+  function grant(r, source = 'mission') {
     const s = G.DB.save;
     if (!r) return;
+    const reward = effectiveReward(r, source);
     s.tickets = s.tickets || { t1: 0, t10: 0 };
-    if (r.coins) s.coins += r.coins;
-    if (r.t1) s.tickets.t1 += r.t1;
-    if (r.t10) s.tickets.t10 += r.t10;
+    if (reward.coins) s.coins += reward.coins;
+    if (reward.t1) s.tickets.t1 += reward.t1;
     if (G.UI && G.UI.refreshCoins && !document.getElementById('topbar').classList.contains('hidden')) G.UI.refreshCoins();
   }
 
-  function rewardText(r) {
+  function rewardText(r, source = 'mission') {
+    const reward = effectiveReward(r, source);
     const p = [];
-    if (r.t10) p.push(G.Icons.html('ticket10', 12) + ' ' + r.t10 + ' ×10');
-    if (r.t1) p.push(G.Icons.html('ticket', 12) + ' ' + r.t1);
-    if (r.coins) p.push('<span class="coin"></span> ' + r.coins);
+    if (reward.t1) p.push(G.Icons.html('ticket', 12) + ' ' + reward.t1);
+    if (reward.coins) p.push('<span class="coin"></span> ' + reward.coins);
     return p.join(' &nbsp;');
   }
 
@@ -191,7 +203,7 @@ G.Progress = (() => {
       if (s.ach[a.id]) continue;
       if (a.value(s) < a.goal) continue;
       s.ach[a.id] = Date.now();
-      grant(a.reward);
+      grant(a.reward, 'achievement');
       notify('¡Logro: ' + a.name + '!', a.title ? 'Nuevo título: ' + a.title : '', a);
     }
   }
@@ -235,5 +247,5 @@ G.Progress = (() => {
     }, 2800);
   }
 
-  return { ensure, event, kill, claim, reroll, checkAch, titles, pending, text, done, rewardText, grant };
+  return { ensure, event, kill, claim, reroll, checkAch, titles, pending, text, done, rewardText, effectiveReward, grant };
 })();

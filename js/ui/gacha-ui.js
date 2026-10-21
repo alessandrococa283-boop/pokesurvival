@@ -53,23 +53,29 @@ G.GachaUI = (() => {
     }
 
     const pity = (s.pity && s.pity[gen]) || 0;
-    $('gacha-pity').textContent = `Tiradas sin legendaria en ${banner.name}: ${pity} / ${G.Gacha.PITY_5}`;
+    $('gacha-pity').textContent = G.Gacha.hasLegendary(gen)
+      ? `Tiradas sin legendaria en ${banner.name}: ${pity} / ${G.Gacha.PITY_5}`
+      : `Este banner no tiene Pokémon legendarios; el pity no aplica.`;
 
-    $('gacha-rates').innerHTML = '<h3>Probabilidades</h3>' + G.Gacha.RATES.slice().reverse().map(([r, w]) => `
+    const rates = G.Gacha.ratesFor(gen);
+    const notes = [];
+    if (G.Gacha.canGuaranteeTen(gen)) notes.push('La tirada ×10 garantiza al menos una Épica.');
+    if (G.Gacha.hasLegendary(gen)) notes.push(`A las ${G.Gacha.PITY_5} tiradas sin Legendaria en un banner, la siguiente lo es.`);
+    notes.push('Los porcentajes se ajustan a las rarezas disponibles en este banner.');
+    notes.push('Los repetidos dan Pokémonedas. Los shiny no se repiten.');
+    notes.push('Los tickets se consiguen jugando; los de misión y logro se muestran ya ajustados.');
+    $('gacha-rates').innerHTML = '<h3>Probabilidades</h3>' + rates.slice().reverse().map(([r, percentage]) => `
       <div><span style="color:${G.Gacha.RARITY_COLOR[r]}">${G.UI.stars(r, 10)} ${G.Gacha.RARITY_NAME[r]}</span>
-      <span>${w}% · ${G.Gacha.pool(r, gen).length}</span></div>`).join('') +
-      `<div><span>${G.Icons.html('shiny', 12)} Shiny</span><span>1%</span></div>
-       <p class="note">· La tirada ×10 garantiza al menos una Épica.<br>
-       · A las ${G.Gacha.PITY_5} tiradas sin Legendaria en un banner, la siguiente lo es.<br>
-       · Los repetidos dan Pokémonedas. Los shiny no se repiten.<br>
-       · Los tickets se consiguen jugando: algunos Pokémon los sueltan al caer, y
-         los jefes y los legendarios de las grietas, a veces, tickets ×10.</p>`;
+      <span>${Number(percentage.toFixed(2)).toLocaleString('es')}% · ${G.Gacha.pool(r, gen).length}</span></div>`).join('') +
+      `<div><span>${G.Icons.html('shiny', 12)} Shiny</span><span>${G.Gacha.SHINY_RATE * 100}%</span></div>
+       <p class="note">${notes.map(note => '· ' + note).join('<br>')}</p>`;
 
     const t = s.tickets;
-    $('cost-1').innerHTML = `${G.Icons.html('ticket', 18)} 1`;
-    $('cost-10').innerHTML = `${G.Icons.html('ticket', 18)} 10`;
-    $('cost-10b').innerHTML = `${G.Icons.html('ticket10', 18)} 1`;
-    $('gacha-tickets').innerHTML = `Tienes ${G.Icons.html('ticket', 18)} <b>${t.t1}</b> tickets y ${G.Icons.html('ticket10', 18)} <b>${t.t10}</b> tickets ×10`;
+    const costs = G.Acquisition.gacha.costs;
+    $('cost-1').innerHTML = `${G.Icons.html('ticket', 18)} ${costs.single.t1} + ${G.Icons.html('coin', 18)} ${costs.single.coins.toLocaleString('es')}`;
+    $('cost-10').innerHTML = `${G.Icons.html('ticket', 18)} ${costs.ten.t1} + ${G.Icons.html('coin', 18)} ${costs.ten.coins.toLocaleString('es')}`;
+    $('cost-10b').innerHTML = `${G.Icons.html('ticket10', 18)} ${costs.ten.t10} + ${G.Icons.html('coin', 18)} ${costs.ten.coins.toLocaleString('es')}`;
+    $('gacha-tickets').innerHTML = `Tienes ${G.Icons.html('ticket', 18)} <b>${t.t1}</b> tickets, ${G.Icons.html('ticket10', 18)} <b>${t.t10}</b> tickets ×10 y ${G.Icons.html('coin', 18)} <b>${s.coins.toLocaleString('es')}</b> monedas`;
     $('pull-1').disabled = !G.Gacha.costOf(s, 1);
     $('pull-10').disabled = !G.Gacha.costOf(s, 10, 't1');
     $('pull-10b').disabled = !G.Gacha.costOf(s, 10, 't10');
@@ -80,41 +86,47 @@ G.GachaUI = (() => {
 
   async function pull(n, use = 't1') {
     if (busy) return;
-    const res = G.Gacha.pull(G.DB.save, n, gen, use);
-    if (!res) { G.Audio.sfx('error'); G.UI.toast('No tienes tickets suficientes: consíguelos jugando'); return; }
-    G.Progress.checkAch();
-    G.DB.commit(true);
     busy = true;
+    try {
+      const res = G.Gacha.pull(G.DB.save, n, gen, use);
+      if (!res) {
+        G.Audio.sfx('error');
+        G.UI.toast('No tienes los tickets y las monedas necesarias para esta tirada.');
+        return;
+      }
+      G.Progress.checkAch();
+      G.DB.commit(true);
 
-    const best = Math.max(...res.map(r => r.rarity));
-    const fx = $('pull-fx'), slot = $('slot'), out = $('pull-results');
-    out.innerHTML = '';
-    $('pull-close').classList.add('hidden');
-    slot.style.display = '';
-    fx.classList.remove('hidden');
+      const best = Math.max(...res.map(r => r.rarity));
+      const fx = $('pull-fx'), slot = $('slot'), out = $('pull-results');
+      out.innerHTML = '';
+      $('pull-close').classList.add('hidden');
+      slot.style.display = '';
+      fx.classList.remove('hidden');
 
-    // La tragaperras (ui/slots.js) y luego las cartas.
-    await G.Slots.play(slot, res);
-    G.Audio.sfx('burst', { rarity: best });
-    slot.style.display = 'none';
+      await G.Slots.play(slot, res);
+      G.Audio.sfx('burst', { rarity: best });
+      slot.style.display = 'none';
 
-    for (const r of res) {
-      const mon = G.DEX_BY[r.dex];
-      const c = document.createElement('div');
-      c.className = 'pcard r' + r.rarity + (r.shiny ? ' shiny' : '');
-      c.style.setProperty('--rc', r.shiny ? '#9ae6ff' : G.Gacha.RARITY_COLOR[r.rarity]);
-      c.innerHTML = `<div class="stars">${G.UI.stars(r.rarity, 24)}</div>`;
-      c.appendChild(G.UI.spriteCanvas(r.dex, 132, 120, { lively: r.rarity >= 4 || r.shiny, scale: 2, shiny: r.shiny }));
-      const tag = r.isNew
-        ? `<span class="new">${r.shiny ? '¡SHINY NUEVO!' : '¡NUEVO!'}</span>`
-        : `Repetido · <span class="coin"></span> +${r.refund}`;
-      c.insertAdjacentHTML('beforeend', `<b>${r.shiny ? G.Icons.html('shiny', 12) + ' ' : ''}${mon.name}</b><div class="tag">${tag}</div>`);
-      out.appendChild(c);
-      G.Audio.sfx('reveal', { rarity: r.rarity });
-      await wait(n === 10 ? 150 : 0);
+      for (const r of res) {
+        const mon = G.DEX_BY[r.dex];
+        const c = document.createElement('div');
+        c.className = 'pcard r' + r.rarity + (r.shiny ? ' shiny' : '');
+        c.style.setProperty('--rc', r.shiny ? '#9ae6ff' : G.Gacha.RARITY_COLOR[r.rarity]);
+        c.innerHTML = `<div class="stars">${G.UI.stars(r.rarity, 24)}</div>`;
+        c.appendChild(G.UI.spriteCanvas(r.dex, 132, 120, { lively: r.rarity >= 4 || r.shiny, scale: 2, shiny: r.shiny }));
+        const tag = r.isNew
+          ? `<span class="new">${r.shiny ? '¡SHINY NUEVO!' : '¡NUEVO!'}</span>`
+          : `Repetido · <span class="coin"></span> +${r.refund}`;
+        c.insertAdjacentHTML('beforeend', `<b>${r.shiny ? G.Icons.html('shiny', 12) + ' ' : ''}${mon.name}</b><div class="tag">${tag}</div>`);
+        out.appendChild(c);
+        G.Audio.sfx('reveal', { rarity: r.rarity });
+        await wait(n === 10 ? 150 : 0);
+      }
+      $('pull-close').classList.remove('hidden');
+    } finally {
+      busy = false;
     }
-    $('pull-close').classList.remove('hidden');
-    busy = false;
   }
 
   function close() {
