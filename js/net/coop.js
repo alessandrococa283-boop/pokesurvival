@@ -1,4 +1,4 @@
-/* ============ coop.js — partida cooperativa (hasta 4 jugadores) ============
+/* ============ coop.js — partida cooperativa (hasta 5 jugadores) ============
  *
  * Quién manda en qué:
  *   ANFITRIÓN   enemigos (aparición, IA, vida, muerte), objetos del suelo,
@@ -19,11 +19,11 @@
  *   anfitrión -> invitado  { k:'f', t, lv, xp, xn, ki, bo, co, p:{uid:[estado]},
  *                            e:[[id,x,y,vida,anim,dir,estados]], ev:[eventos],
  *                            ja:[x,y,anim,dir] (Arceus, sólo en la Sentencia) }
- *   anfitrión -> todos     { k:'start', seed, host, members:[{uid,name,dex,shiny}] }
+ *   anfitrión -> todos     { k:'start', seed, host, members:[{uid,name,dex,shiny,babyDex}] }
  */
 G.Coop = (() => {
   const ANIMS = ['Idle', 'Walk', 'Attack', 'Shoot', 'Charge', 'Hurt', 'Faint'];
-  const COLORS = ['#ffcb3d', '#5fc8ff', '#7ee07a', '#ff8ad8'];
+  const COLORS = ['#ffcb3d', '#5fc8ff', '#7ee07a', '#ff8ad8', '#c99aff'];
   // Mensajes por segundo: 15 por la conexión directa y 3 por el relé de la
   // Realtime Database (apagado: 1 $ el GB).
   const RATE_FAST = 1 / 15, RATE_SLOW = 1 / 3;
@@ -76,7 +76,7 @@ G.Coop = (() => {
       const x = (i - (cfg.members.length - 1) / 2) * 34, y = 0;
       if (m.uid === me) { pl.x = x; pl.y = y; pl.uid = me; pl.coopHost = host; pl.tagColor = COLORS[i]; return; }
       const mon = G.DEX_BY[m.dex] || G.DEX_BY[25];
-      const p = new G.Player(mon, {}, !!m.shiny);
+      const p = new G.Player(mon, {}, !!m.shiny, m.babyDex);
       p.remote = true; p.uid = m.uid; p.tag = m.name; p.tagColor = COLORS[i]; p.revLabel = 'Quédate a su lado';
       p.x = x; p.y = y;
       p.net = { x, y, ang: Math.PI / 2, walk: 0, hp: p.maxHp, maxHp: p.maxHp, dead: 0, mv: G.startMoveOf(mon.dex), ml: 1, mag: 78, aim: Math.PI / 2, rev: 0, dex: mon.dex };

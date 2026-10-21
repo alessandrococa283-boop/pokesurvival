@@ -9,7 +9,7 @@ G.Player = class Player {
    * @param mon   entrada de G.DEX
    * @param perks mejoras permanentes ya resueltas (ver data/upgrades.js)
    */
-  constructor(mon, perks = {}, shiny = false) {
+  constructor(mon, perks = {}, shiny = false, babyDex = undefined) {
     this.mon = mon;
     this.dex = mon.dex;
     this.shiny = shiny && G.Sprites.hasShiny(mon.dex);
@@ -41,8 +41,8 @@ G.Player = class Player {
     this.evolutionMoves = [];
     this.pendingEvolutionMoves = 0;
     this.averageEvolutionBonusGranted = false;
-    const babyDex = G.DB && G.DB.save && G.DB.save.babyPartner;
-    this.babyDex = G.BabyMons.BY_DEX[babyDex] ? babyDex : null;
+    const selectedBabyDex = babyDex === undefined ? G.DB && G.DB.save && G.DB.save.babyPartner : babyDex;
+    this.babyDex = G.BabyMons.BY_DEX[selectedBabyDex] ? selectedBabyDex : null;
     this.babyPassive = G.BabyMons.passiveFor(this.babyDex);
     this.magnet *= this.babyPassive ? this.babyPassive.magnet || 1 : 1;
     this.bonds = 0;            // vínculos por usar (premio de los legendarios)
@@ -642,20 +642,6 @@ G.Player = class Player {
       ctx.restore();
     }
     G.Sprites.drawShadow(ctx, this.dex, this.x, this.y);
-    if (this.babyImage && this.babyImage.complete && this.babyImage.naturalWidth && !this.dead && !this.remote) {
-      const frameW = this.babyImage.naturalWidth / 4;
-      const frameH = this.babyImage.naturalHeight / 8;
-      const frame = Math.floor(performance.now() / 220) % 4;
-      const size = Math.max(14, this.bodyH * 0.7);
-      const bx = this.x - Math.cos(this.moveAngle) * 23;
-      const by = this.y - Math.sin(this.moveAngle) * 14;
-      ctx.save();
-      ctx.imageSmoothingEnabled = false;
-      ctx.globalAlpha = 0.95;
-      ctx.drawImage(this.babyImage, frame * frameW, 0, frameW, frameH,
-        bx - size / 2, by - size, size, size);
-      ctx.restore();
-    }
     // Poder de altar: aro de su color latiendo bajo los pies.
     if (this.power && !this.dead) {
       ctx.save();
@@ -674,6 +660,24 @@ G.Player = class Player {
 
     const alpha = this.invuln > 0 && !this.dead ? (Math.floor(this.invuln * 18) % 2 ? 0.45 : 1) : 1;
     this.anim.draw(ctx, this.x, this.y, { flash: this.flash > 0, softFlash: true, alpha, color: '#ffcb3d' });
+    if (this.babyImage && this.babyImage.complete && this.babyImage.naturalWidth && !this.dead) {
+      const anim = G.SPRITE_META[this.babyDex].a.Idle;
+      const cycle = anim.d.reduce((sum, duration) => sum + duration, 0);
+      let frameT = (performance.now() / 1000 * 60) % cycle;
+      let frame = 0;
+      while (frameT >= anim.d[frame]) frameT -= anim.d[frame++];
+      const dir = G.Sprites.dirFromAngle(this.moveAngle);
+      const size = Math.max(14, this.bodyH * 0.7);
+      const scale = size / anim.h;
+      const bx = this.x + Math.cos(this.moveAngle + Math.PI / 2) * 22;
+      const by = this.y + Math.sin(this.moveAngle + Math.PI / 2) * 14;
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      ctx.globalAlpha = 0.95;
+      ctx.drawImage(this.babyImage, frame * anim.w, dir * anim.h, anim.w, anim.h,
+        bx - anim.ax * scale, by - anim.ay * scale, anim.w * scale, anim.h * scale);
+      ctx.restore();
+    }
 
     // Arcos de buff alrededor de los pies.
     const COL = { atk: '#ff6b4d', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };

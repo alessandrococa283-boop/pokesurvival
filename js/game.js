@@ -93,7 +93,7 @@ G.Game = (() => {
     storyVictory = false;
     const member = coop && coop.members.find(m => m.uid === G.Net.uid);
     const dex = storyMode && member ? member.dex : options.dex || save.partner;
-    if (storyMode && (!G.DEX_BY[dex] || !G.EvolutionData.isBase(dex) || !G.DB.owns(dex))) {
+    if (storyMode && (!G.DEX_BY[dex] || dex < 1 || dex > 151 || !G.EvolutionData.isBase(dex) || !G.DB.owns(dex))) {
       storyMode = false;
       G.UI.toast('Historia requiere un Pokémon de Kanto (#001–151) que tengas en tu colección.');
       return false;
@@ -122,7 +122,8 @@ G.Game = (() => {
     time = 0; pendingLevels = 0;
     runReal = performance.now(); tampered = false;
 
-    pl = new G.Player(mon, perks, !storyMode && !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
+    pl = new G.Player(mon, perks, !storyMode && !!save.partnerShiny && G.DB.ownsShiny(mon.dex),
+      coop && member ? member.babyDex : undefined);
     banked = { t1: 0, t10: 0 };
     caught = [];
     pl.addMove(G.startMoveOf(mon.dex));
@@ -996,7 +997,7 @@ G.Flow = {
   /** Empieza la partida en grupo (el anfitrión la manda a todos). */
   startCoop(cfg) {
     if (G.Game.state !== 'ui' || !G.Social.room) return;
-    if (cfg.story && cfg.members.some(m => !G.EvolutionData.isBase(m.dex))) {
+    if (cfg.story && cfg.members.some(m => m.dex < 1 || m.dex > 151 || !G.EvolutionData.isBase(m.dex))) {
       G.UI.toast('Historia solo admite formas base de Pokémon de Kanto.');
       return;
     }

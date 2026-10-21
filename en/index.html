@@ -23,7 +23,7 @@
 <meta property="og:image:alt" content="PokéSurvival, an unofficial fan project inspired by PokéSurvivor">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="PokéSurvival – Pokémon survival game">
-<meta name="twitter:description" content="Unofficial fan project inspired by PokéSurvivor. Free, no downloads, co-op for up to 4.">
+<meta name="twitter:description" content="Unofficial fan project inspired by PokéSurvivor. Free, no downloads, co-op for up to 5.">
 <meta name="twitter:image" content="https://proyecto-pokemon2.web.app/assets/og-image.jpg">
 <script>window.PS_PAGES = true;</script>
 <link rel="manifest" href="manifest.webmanifest">
@@ -186,7 +186,7 @@
         <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
         <button class="menu-item" data-go="baby-gacha">Compañeros bebé<small>Incuba huevos y reúne Pokémon bebé</small></button>
         <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
-        <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, hasta 4</small></button>
+        <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, hasta 5</small></button>
         <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
         <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
       </div>
@@ -379,6 +379,14 @@
     <div class="row between"><h2>Sala</h2>
       <div class="row"><button id="lobby-menu" class="btn small ghost">Menú</button><button id="lobby-leave" class="btn small ghost">Salir de la sala</button></div></div>
     <p class="sub" id="lobby-sub"></p>
+    <div class="row lobby-mode-row">
+      <label for="lobby-mode">Modo de juego</label>
+      <select id="lobby-mode" class="field">
+        <option value="normal">Normal</option>
+        <option value="story">Historia</option>
+      </select>
+      <small id="lobby-mode-note" class="sub"></small>
+    </div>
     <div id="lobby-members" class="lobby-members"></div>
     <h3 id="lobby-inv-title" style="margin:14px 0 6px">Invitar amigos</h3>
     <div id="lobby-invite" class="fr-list"></div>
@@ -608,6 +616,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/app.min.js?v=e5ad98e010"></script>
+<script defer src="js/app.min.js?v=74da95a26e"></script>
 </body>
 </html>

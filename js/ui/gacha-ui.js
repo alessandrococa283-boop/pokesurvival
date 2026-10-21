@@ -116,20 +116,20 @@ G.GachaUI = (() => {
     let image = babyImages.get(dex);
     if (!image) {
       image = new Image();
-      image.onload = () => drawBabyFrame(ctx, image, size);
+      image.onload = () => drawBabyFrame(ctx, image, dex, size);
       image.onerror = () => console.error(`[BabyGacha] No se pudo cargar assets/huevos/sprites babymons/${dex}/Idle.png`);
       image.src = `assets/huevos/sprites%20babymons/${dex}/Idle.png`;
       babyImages.set(dex, image);
-    } else if (image.complete && image.naturalWidth) drawBabyFrame(ctx, image, size);
+    } else if (image.complete && image.naturalWidth) drawBabyFrame(ctx, image, dex, size);
     return canvas;
   }
 
-  function drawBabyFrame(ctx, image, size) {
-    const frameW = image.naturalWidth / 4, frameH = image.naturalHeight / 8;
-    const scale = Math.min(size * 0.84 / frameW, size * 0.84 / frameH);
-    const w = frameW * scale, h = frameH * scale;
+  function drawBabyFrame(ctx, image, dex, size) {
+    const anim = G.SPRITE_META[dex].a.Idle;
+    const scale = Math.min(size * 0.84 / anim.w, size * 0.84 / anim.h);
+    const w = anim.w * scale, h = anim.h * scale;
     ctx.clearRect(0, 0, size, size);
-    ctx.drawImage(image, 0, 0, frameW, frameH, (size - w) / 2, (size - h) / 2, w, h);
+    ctx.drawImage(image, 0, 0, anim.w, anim.h, (size - w) / 2, (size - h) / 2, w, h);
   }
 
   function eggImage(className) {

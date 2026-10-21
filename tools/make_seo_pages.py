@@ -155,7 +155,7 @@ FAQ = {
   ('¿Hay que descargar algo?', 'No. Se juega en el navegador, en PC, tablet o móvil. Si quieres, puedes instalarlo como app con «Añadir a pantalla de inicio».'),
   ('¿Se puede jugar en el móvil?', 'Sí, en horizontal. Pon el dedo en cualquier parte de la pantalla y arrastra para moverte (el joystick aparece donde tocas); toca el botón de arriba a la derecha para pausar.'),
   ('¿Está en inglés?', 'Sí: el juego sale en español o en inglés según el idioma de tu navegador, y se puede cambiar en Ajustes.'),
-  ('¿Puedo jugar con mis amigos?', 'Sí: el modo cooperativo online admite hasta 4 jugadores. Añade a tus amigos por su apodo, invítalos a tu sala y empezad la partida. La experiencia se comparte y podéis revivir a un compañero caído quedándoos a su lado.'),
+  ('¿Puedo jugar con mis amigos?', 'Sí: el modo cooperativo online admite hasta 5 jugadores. El anfitrión puede elegir modo Normal o Historia y cada jugador selecciona su Pokémon y compañero bebé en la sala. Añade a tus amigos por su apodo, invítalos a tu sala y empezad la partida. La experiencia se comparte y podéis revivir a un compañero caído quedándoos a su lado.'),
   ('¿Cuántos Pokémon hay?', f'{N} Pokémon de las 9 regiones (de Kanto a Paldea), todos jugables como compañero y con su versión shiny cuando existe.'),
   ('¿Cómo consigo más Pokémon?', 'Con el gacha, que funciona con tickets que se ganan jugando: los Pokémon normales sueltan tickets de vez en cuando, y los jefes y los legendarios de las grietas, a veces, tickets ×10. No se pueden comprar con dinero real.'),
   ('¿Qué son las grietas?', 'Portales misteriosos que aparecen muy de vez en cuando. Si entras, luchas contra un Pokémon legendario en una arena de su tipo (hay 18 distintas). Si ganas, te llevas premio; si caes, vuelves al mapa.'),
@@ -166,7 +166,7 @@ FAQ = {
   ('Do I need to download anything?', 'No. You play in your browser on PC, tablet or phone. If you like, you can install it as an app with “Add to Home Screen”.'),
   ('Can I play on my phone?', 'Yes, in landscape. Put your finger anywhere on the screen and drag to move (the joystick appears where you touch); tap the top-right button to pause.'),
   ('Is it in English?', 'Yes: the game shows up in English or Spanish depending on your browser language, and you can change it in Settings.'),
-  ('Can I play with my friends?', 'Yes: online co-op supports up to 4 players. Add your friends by nickname, invite them to your room and start the game. Experience is shared and you can revive a fallen teammate by standing next to them.'),
+  ('Can I play with my friends?', 'Yes: online co-op supports up to 5 players. The host can choose Normal or Story mode and each player selects their Pokémon and baby companion in the lobby. Add your friends by nickname, invite them to your room and start the game. Experience is shared and you can revive a fallen teammate by standing next to them.'),
   ('How many Pokémon are there?', f'{N} Pokémon from all 9 regions (Kanto to Paldea), all playable as your partner, with their shiny form when one exists.'),
   ('How do I get more Pokémon?', 'From the gacha, which uses tickets you earn by playing: regular Pokémon drop tickets now and then, and bosses and rift legendaries sometimes drop ×10 tickets. They can\'t be bought with real money.'),
   ('What are rifts?', 'Mysterious portals that open very rarely. If you go in, you fight a legendary Pokémon in an arena of its type (there are 18). Win and you get a reward; fall and you\'re sent back to the map.'),
@@ -201,7 +201,7 @@ navegador: eliges un compañero, te mueves por un mapa infinito y tus ataques sa
 <li><a href="{lk('shinies')}"><b>Shinies</b></a> salvajes (1 entre 4096) y en el gacha.</li>
 <li><b>Gacha con forma de tragaperras</b>, por región, con tickets que se ganan jugando.</li>
 <li><a href="{lk('items')}"><b>Objetos equipables</b></a> como Restos, Cinta Elección o Vidasfera.</li>
-<li><b>Cooperativo online hasta 4</b> con tu lista de amigos.</li>
+<li><b>Cooperativo online hasta 5</b> con tu lista de amigos.</li>
 <li><b>Misiones</b> diarias y semanales, <a href="{lk('achievements')}"><b>{len(D['achievements'])} logros</b></a> con medallas y títulos, perfil público y ranking.</li>
 <li>En <b>español y en inglés</b>, en PC y en móvil, e <b>instalable como app</b>.</li>
 </ul>
@@ -244,7 +244,7 @@ How long can you last?</p>
 <li>Wild <a href="{lk('shinies')}"><b>shinies</b></a> (1 in 4096) and in the gacha.</li>
 <li>A <b>slot-machine gacha</b> for each region, with tickets you earn by playing.</li>
 <li><a href="{lk('items')}"><b>Held items</b></a> such as Leftovers, Choice Band and Life Orb.</li>
-<li><b>Online co-op for up to 4</b> with your friends list.</li>
+<li><b>Online co-op for up to 5</b> with your friends list.</li>
 <li>Daily and weekly <b>missions</b>, <a href="{lk('achievements')}"><b>{len(D['achievements'])} achievements</b></a> with medals and titles, a public profile and leaderboards.</li>
 <li>In <b>English and Spanish</b>, on PC and mobile, and <b>installable as an app</b>.</li>
 </ul>
@@ -503,8 +503,8 @@ NEWS = [
   ('Grietas que llevan a 18 arenas legendarias, una por tipo; clima que cambia la batalla; tabla de tipos y gacha tragaperras con tickets.',
    'Rifts leading to 18 legendary arenas, one per type; weather that changes the fight; a type chart and a slot-machine gacha with tickets.')),
  ('2026-10-08', ('Cooperativo y ranking', 'Co-op and leaderboards'),
-  ('Cooperativo online hasta 4 con tu lista de amigos y ranking diario, semanal, mensual, anual e histórico.',
-   'Online co-op for up to 4 with your friends list, plus daily, weekly, monthly, yearly and all-time leaderboards.')),
+  ('Cooperativo online hasta 5 con tu lista de amigos y ranking diario, semanal, mensual, anual e histórico.',
+   'Online co-op for up to 5 with your friends list, plus daily, weekly, monthly, yearly and all-time leaderboards.')),
 ]
 def news(lang):
     pid = 'news'
@@ -565,8 +565,8 @@ def game_en():
         ('<meta property="og:image:alt" content="PokéSurvival, proyecto fan no oficial inspirado en PokéSurvivor">',
          '<meta property="og:image:alt" content="PokéSurvival, an unofficial fan project inspired by PokéSurvivor">'),
         ('<meta name="twitter:title" content="PokéSurvival – Supervivencia Pokémon">', '<meta name="twitter:title" content="PokéSurvival – Pokémon survival game">'),
-        ('<meta name="twitter:description" content="Proyecto fan no oficial inspirado en PokéSurvivor. Gratis, sin descargas y cooperativo hasta 4.">',
-         '<meta name="twitter:description" content="Unofficial fan project inspired by PokéSurvivor. Free, no downloads, co-op for up to 4.">'),
+        ('<meta name="twitter:description" content="Proyecto fan no oficial inspirado en PokéSurvivor. Gratis, sin descargas y cooperativo hasta 5.">',
+         '<meta name="twitter:description" content="Unofficial fan project inspired by PokéSurvivor. Free, no downloads, co-op for up to 5.">'),
         ('<p>Juego de supervivencia con Pokémon, gratis en el navegador y en el móvil.</p>', '<p>A Pokémon survival game, free in your browser and on mobile.</p>'),
         ('<p class="boot-ld">Cargando…</p>', '<p class="boot-ld">Loading…</p>'),
     ]

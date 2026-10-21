@@ -23,7 +23,7 @@
  */
 G.Social = (() => {
   const VALID = /^[A-Za-z0-9_ñÑáéíóúÁÉÍÓÚ]{3,16}$/;
-  const MAX_PLAYERS = 4;
+  const MAX_PLAYERS = 5;
   const INVITE_TTL = 3 * 60 * 1000;
   /*
    * Hora real: la del servidor de la web (cabecera Date de version.json, gratis).
@@ -296,7 +296,8 @@ G.Social = (() => {
 
   function memberInfo() {
     const s = G.DB.save;
-    return { name: me.name, dex: s.partner, shiny: !!s.partnerShiny && G.DB.ownsShiny(s.partner), at: ts() };
+    return { name: me.name, dex: s.partner, shiny: !!s.partnerShiny && G.DB.ownsShiny(s.partner),
+      babyDex: s.babyPartner || null, at: ts() };
   }
 
   /**
@@ -312,7 +313,7 @@ G.Social = (() => {
     if (room) return room;
     rtOn();
     const id = fb.rtdb.ref('rooms').push().key;
-    await fb.rtdb.ref('rooms/' + id).set({ host: uid, open: true, at: ts(), m: { [uid]: memberInfo() } });
+    await fb.rtdb.ref('rooms/' + id).set({ host: uid, open: true, mode: 'normal', at: ts(), m: { [uid]: memberInfo() } });
     enterRoom(id, uid);
     return room;
   }
@@ -356,7 +357,9 @@ G.Social = (() => {
     href.on('value', s => { if (room && room.id === id && !s.val()) closedRoom(); }, () => closedRoom());
     const oref = fb.rtdb.ref('rooms/' + id + '/open');
     oref.on('value', s => { if (room && room.id === id) { room.open = s.val() === true; emit('room'); } }, () => {});
-    roomRefs = [mref, href, oref];
+    const modeRef = fb.rtdb.ref('rooms/' + id + '/mode');
+    modeRef.on('value', s => { if (room && room.id === id) { room.mode = s.val() === 'story' ? 'story' : 'normal'; emit('room'); } }, () => {});
+    roomRefs = [mref, href, oref, modeRef];
     writeStatus();
     emit('room');
   }
@@ -402,10 +405,22 @@ G.Social = (() => {
     if (room && room.isHost) fb.rtdb.ref('rooms/' + room.id + '/open').set(!!open).catch(() => {});
   }
 
+  /** El anfitrión elige el modo antes de iniciar la partida. */
+  function setRoomMode(mode) {
+    if (!room || !room.isHost || (mode !== 'normal' && mode !== 'story')) return Promise.resolve(false);
+    return fb.rtdb.ref('rooms/' + room.id + '/mode').set(mode)
+      .then(() => true)
+      .catch(e => {
+        console.warn('[Social] actualizar modo de sala:', e.code || e.message);
+        return false;
+      });
+  }
+
   /** Actualiza tu Pokémon en la sala (si cambias de compañero). */
-  function refreshMember(dex = G.DB.save.partner, shiny = !!G.DB.save.partnerShiny && G.DB.ownsShiny(G.DB.save.partner)) {
+  function refreshMember(dex = G.DB.save.partner, shiny = !!G.DB.save.partnerShiny && G.DB.ownsShiny(G.DB.save.partner),
+    babyDex = G.DB.save.babyPartner || null) {
     if (!room || !me) return Promise.resolve(true);
-    return fb.rtdb.ref('rooms/' + room.id + '/m/' + uid).update({ dex, shiny })
+    return fb.rtdb.ref('rooms/' + room.id + '/m/' + uid).update({ dex, shiny, babyDex: babyDex || null })
       .then(() => true)
       .catch(e => {
         console.warn('[Social] actualizar Pokémon de sala:', e.code || e.message);
@@ -526,7 +541,7 @@ G.Social = (() => {
 
   return {
     start, stop, claimNick, request, accept, remove, publishProfile, getProfile, profileData,
-    createRoom, joinRoom, leaveRoom, setOpen, refreshMember, setPlaying, refreshPresence,
+    createRoom, joinRoom, leaveRoom, setOpen, setRoomMode, refreshMember, setPlaying, refreshPresence,
     invite, acceptInvite, declineInvite,
     on(fn) { listeners.add(fn); }, off(fn) { listeners.delete(fn); },
     get me() { return me; },

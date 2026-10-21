@@ -48,7 +48,14 @@ G.LevelUp = (() => {
           color: G.U.TYPE_COLOR[move.type], tag: 'Ataque',
           title: `${move.name} · Nv. ${move.lvl + 1}`,
           desc: next,
-          apply: () => { G.Moves.levelUp(move); }
+          apply: p => {
+            const previousLevel = move.lvl;
+            G.Moves.levelUp(move);
+            if (previousLevel < 10 && move.lvl >= 10 && !move.evolutionExtraGranted) {
+              move.evolutionExtraGranted = true;
+              p.pendingEvolutionMoves++;
+            }
+          }
         });
       }
     }

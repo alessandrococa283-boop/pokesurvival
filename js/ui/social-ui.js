@@ -153,6 +153,13 @@
       $('lobby-menu').onclick = () => G.MenuUI.open();
       $('lobby-start').onclick = start;
       $('lobby-start').dataset.sfx = 'confirm';
+      $('lobby-mode').onchange = async () => {
+        const ok = await G.Social.setRoomMode($('lobby-mode').value);
+        if (!ok) {
+          G.UI.toast('No se pudo cambiar el modo de juego.');
+          render();
+        }
+      };
       // Conecta / desconecta la red al entrar o salir de una sala.
       G.Social.on(what => {
         const room = G.Social.room;
@@ -171,7 +178,10 @@
 
     function open() {
       if (!G.Social.room) { G.MenuUI.open(); return; }
-      if (G.MenuUI.storyQueued) G.Social.refreshMember(G.MenuUI.storyDex, false);
+      if (G.MenuUI.storyQueued) {
+        G.Social.refreshMember(G.MenuUI.storyDex, false);
+        if (G.Social.room.isHost) G.Social.setRoomMode('story');
+      }
       else G.Social.refreshMember();
       G.Social.refreshPresence();
       G.UI.show('scr-lobby', true);
@@ -188,6 +198,106 @@
       return mode === 'direct' ? 'Conectado' : mode === 'relay' ? 'Conectado (por servidor)' : mode === 'failed' ? 'No se pudo conectar (reintentando…)' : 'Conectando…';
     }
 
+    function storyDexAllowed(dex) {
+      return dex >= 1 && dex <= 151 && G.EvolutionData.isBase(dex);
+    }
+
+    function babyPreview(dex) {
+      const meta = G.SPRITE_META[dex];
+      if (!meta || !G.BabyMons.BY_DEX[dex]) return null;
+      const canvas = document.createElement('canvas');
+      canvas.className = 'lob-baby';
+      canvas.width = 48;
+      canvas.height = 48;
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.onload = () => {
+        const anim = meta.a.Idle;
+        const scale = Math.min(canvas.width / anim.w, canvas.height / anim.h);
+        const w = anim.w * scale, h = anim.h * scale;
+        ctx.imageSmoothingEnabled = false;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, anim.w, anim.h,
+          (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+      };
+      img.onerror = () => console.error('[Lobby] No se pudo cargar el sprite del compañero bebé ' + dex + '.');
+      img.src = `assets/huevos/sprites%20babymons/${dex}/Idle.png`;
+      return canvas;
+    }
+
+    function addMemberSelectors(card, member, room) {
+      const save = G.DB.save;
+      const story = room.mode === 'story';
+      const choices = G.DEX.filter(mon => G.DB.owns(mon.dex) && (!story || storyDexAllowed(mon.dex)));
+      const babies = G.BabyMons.LIST.filter(mon => save.babyOwned && save.babyOwned[mon.dex]);
+      const selects = document.createElement('div');
+      selects.className = 'lobby-selects';
+      const pokemonLabel = document.createElement('label');
+      pokemonLabel.appendChild(document.createTextNode('Tu Pokémon'));
+      const pokemon = document.createElement('select');
+      pokemon.className = 'field';
+      pokemon.setAttribute('aria-label', 'Elegir Pokémon');
+      const currentChoice = choices.some(mon => mon.dex === member.dex);
+      if (!currentChoice) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = story ? 'Elige una forma base de Kanto' : 'Elige un Pokémon';
+        option.disabled = true;
+        option.selected = true;
+        pokemon.appendChild(option);
+      }
+      for (const mon of choices) {
+        const option = document.createElement('option');
+        option.value = mon.dex;
+        option.textContent = mon.name;
+        pokemon.appendChild(option);
+      }
+      if (currentChoice) pokemon.value = String(member.dex);
+      pokemonLabel.appendChild(pokemon);
+
+      const babyLabel = document.createElement('label');
+      babyLabel.appendChild(document.createTextNode('Compañero bebé'));
+      const baby = document.createElement('select');
+      baby.className = 'field';
+      baby.setAttribute('aria-label', 'Elegir compañero bebé');
+      const none = document.createElement('option');
+      none.value = '';
+      none.textContent = 'Ninguno';
+      baby.appendChild(none);
+      for (const mon of babies) {
+        const option = document.createElement('option');
+        option.value = mon.dex;
+        option.textContent = mon.name;
+        baby.appendChild(option);
+      }
+      baby.value = member.babyDex && babies.some(mon => mon.dex === Number(member.babyDex))
+        ? String(member.babyDex) : '';
+      babyLabel.appendChild(baby);
+
+      const update = async () => {
+        if (!pokemon.value) return;
+        pokemon.disabled = true;
+        baby.disabled = true;
+        const dex = Number(pokemon.value);
+        const babyDex = baby.value ? Number(baby.value) : null;
+        const shiny = room.mode !== 'story' && dex === save.partner && !!save.partnerShiny && G.DB.ownsShiny(dex);
+        const ok = await G.Social.refreshMember(dex, shiny, babyDex);
+        if (!ok) {
+          G.UI.toast('No se pudo actualizar tu selección en la sala.');
+          render();
+          return;
+        }
+        save.partner = dex;
+        save.partnerShiny = shiny;
+        save.babyPartner = babyDex;
+        G.DB.commit(true);
+      };
+      pokemon.onchange = update;
+      baby.onchange = update;
+      selects.append(pokemonLabel, babyLabel);
+      card.appendChild(selects);
+    }
+
     function render() {
       const room = G.Social.room;
       if (!room) return;
@@ -196,8 +306,15 @@
         ? 'Eres el anfitrión. Invita a tus amigos (hasta ' + G.Social.MAX_PLAYERS + ') y empezad cuando estéis.'
         : 'Estás en la sala de ' + ((ms.find(m => m.uid === room.host) || {}).name || '…') + '. El anfitrión empezará la partida.';
 
+      const mode = $('lobby-mode');
+      mode.value = room.mode || 'normal';
+      mode.disabled = !room.isHost || !room.open;
+      $('lobby-mode-note').textContent = room.isHost
+        ? 'Solo el anfitrión puede cambiarlo.' : 'El anfitrión elige el modo.';
+
       // Las tarjetas sólo se rehacen si cambian los miembros (los sprites no parpadean).
-      const key = ms.map(m => m.uid + ':' + m.dex + ':' + (m.shiny ? 1 : 0)).join('|');
+      const key = (room.mode || 'normal') + ':' + ms.map(m =>
+        m.uid + ':' + m.dex + ':' + (m.shiny ? 1 : 0) + ':' + (m.babyDex || '')).join('|');
       const box = $('lobby-members');
       if (key !== membersKey) {
         membersKey = key;
@@ -210,6 +327,14 @@
             c.style.setProperty('--pc', G.Coop.COLORS[i]);
             c.appendChild(G.UI.spriteCanvas(m.dex, 120, 96, { scale: 2, lively: true, shiny: !!m.shiny }));
             c.insertAdjacentHTML('beforeend', `<b translate="no">${esc(m.name)}</b><small>${esc((G.DEX_BY[m.dex] || {}).name || '')}</small><span class="conn" data-u="${m.uid}"></span>`);
+            if (m.babyDex && G.BabyMons.BY_DEX[m.babyDex]) {
+              const preview = babyPreview(Number(m.babyDex));
+              if (preview) c.appendChild(preview);
+              const babyName = document.createElement('small');
+              babyName.textContent = G.BabyMons.BY_DEX[m.babyDex].name;
+              c.appendChild(babyName);
+            }
+            if (m.uid === G.Social.uid) addMemberSelectors(c, m, room);
           } else c.innerHTML = '<span>Libre</span>';
           box.appendChild(c);
         }
@@ -247,10 +372,12 @@
       btn.classList.toggle('hidden', !room.isHost);
       const connecting = ms.some(m => m.uid !== room.host && G.Net.mode(m.uid) === 'connecting');
       const failed = ms.some(m => m.uid !== room.host && G.Net.mode(m.uid) === 'failed');
-      btn.disabled = !room.isHost || ms.length < 2 || connecting || failed;
+      const storyInvalid = room.mode === 'story' && ms.some(m => !storyDexAllowed(Number(m.dex)));
+      btn.disabled = !room.isHost || ms.length < 2 || connecting || failed || storyInvalid;
       btn.textContent = 'Empezar partida (' + ms.length + '/' + G.Social.MAX_PLAYERS + ')';
       $('lobby-note').textContent = !room.isHost ? 'Cuando el anfitrión empiece, entraréis todos a la vez.'
         : ms.length < 2 ? 'Necesitas al menos un amigo en la sala.'
+        : storyInvalid ? 'Para Historia, cada jugador debe elegir una forma base de Kanto que tenga en su colección.'
         : failed ? 'No se puede conectar con algún amigo: su red (o la tuya) no deja jugar en grupo. Probad con otra wifi o datos móviles; se reintenta solo.'
         : connecting ? 'Conectando con tus amigos…' : 'La partida empieza para todos a la vez.';
     }
@@ -258,15 +385,15 @@
     function start() {
       const room = G.Social.room;
       if (!room || !room.isHost || room.members.length < 2) return;
-      const story = G.MenuUI.storyQueued;
-      if (story && room.members.some(m => m.dex < 1 || m.dex > 151)) {
-        G.UI.toast('Para Historia, cada jugador debe elegir un Pokémon de Kanto en su colección antes de empezar.');
+      const story = room.mode === 'story';
+      if (story && room.members.some(m => !storyDexAllowed(Number(m.dex)))) {
+        G.UI.toast('Para Historia, cada jugador debe elegir una forma base de Kanto que tenga en su colección.');
         return;
       }
       const cfg = {
         k: 'start', seed: Math.floor(Math.random() * 1e6), host: room.host,
         story,
-        members: room.members.map(m => ({ uid: m.uid, name: m.name, dex: m.dex, shiny: !!m.shiny }))
+        members: room.members.map(m => ({ uid: m.uid, name: m.name, dex: m.dex, shiny: !!m.shiny, babyDex: m.babyDex || null }))
       };
       G.MenuUI.clearStoryQueue();
       G.Social.setOpen(false);

@@ -6,9 +6,13 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
-  { d: '2026-10-21', title: ['Compañeros bebé y ataques de evolución', 'Baby Companions and Evolution Attacks'], new: [
+  { d: '2026-10-21', title: ['Ataques, compañeros bebé y cooperativo', 'Attacks, Baby Companions and Co-op'], new: [
     ['Al evolucionar eliges un ataque extra que se lanza junto al principal. Los Pokémon sin evolución y los que evolucionan a niveles altos reciben una elección adicional al nivel evolutivo medio. Los compañeros bebé ya aparecen junto al jugador y sus pasivas tienen efecto durante la partida.',
-     'When a Pokémon evolves, choose an extra attack that launches alongside its main attack. Pokémon without evolutions and those that evolve at high levels receive an extra choice at the average evolution level. Baby companions now appear beside the player and their passives work during runs.']
+     'When a Pokémon evolves, choose an extra attack that launches alongside its main attack. Pokémon without evolutions and those that evolve at high levels receive an extra choice at the average evolution level. Baby companions now appear beside the player and their passives work during runs.'],
+    ['Al mejorar un ataque hasta el nivel 10, en la siguiente elección puedes escoger otro ataque; se suma al grupo y se lanza a la vez que los demás.',
+     'When you upgrade an attack to level 10, you can choose another attack at the next choice; it joins the group and launches alongside the others.'],
+    ['Las salas cooperativas admiten hasta cinco jugadores. El anfitrión elige entre el modo Normal e Historia, cada jugador puede cambiar su Pokémon y compañero bebé en la sala, y los compañeros bebé de todos aparecen durante la partida.',
+     'Co-op rooms now support up to five players. The host chooses Normal or Story mode, each player can change their Pokémon and baby companion in the lobby, and everyone’s baby companions appear during the run.']
   ] },
   { d: '2026-10-20', title: ['Gacha de compañeros bebé', 'Baby Companion Gacha'], new: [
     ['Ya puedes conseguir huevos bebé con un ticket morado y 700 monedas. El tiempo de incubación depende de la rareza; al eclosionar, el Pokémon se añade a tu colección y puedes elegir un compañero bebé.',
