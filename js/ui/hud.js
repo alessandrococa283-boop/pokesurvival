@@ -40,24 +40,8 @@ G.HUD = (() => {
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w * G.U.clamp(xpF, 0, 1), 7);
 
-    // ---------- vida + nivel ----------
+    // ---------- buffs activos ----------
     const px = 16, py = 20;
-    ctx.font = F(800, 13);
-    ctx.fillStyle = '#eaf2ff';
-    ctx.textAlign = 'left';
-    ctx.fillText(pl.mon.name, px, py + 10);
-
-    ctx.font = F(700, 11);
-    ctx.fillStyle = '#ffcb3d';
-    ctx.fillText('Nv. ' + pl.level, px, py + 26);
-
-    bar(ctx, px + 48, py + 17, 168, 11, pl.hp / pl.maxHp, '#ff5f6d');
-    ctx.font = F(700, 10);
-    ctx.fillStyle = 'rgba(255,255,255,.95)';
-    ctx.textAlign = 'center';
-    ctx.fillText(Math.ceil(pl.hp) + ' / ' + Math.round(pl.maxHp), px + 48 + 84, py + 26);
-
-    // buffs activos
     const COL = { atk: '#ff6b4d', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };
     const LBL = { atk: 'ATK', spd: 'VEL', def: 'DEF', regen: 'REG' };
     let bx = px;
@@ -246,29 +230,24 @@ G.HUD = (() => {
     const S = touch && n > 1 ? 42 : 54;
     const GAP = touch && n > 1 ? 5 : 9;
     const totalW = n * S + (n - 1) * GAP;
-    const joinGap = touch ? 6 : 8, abilityGap = touch ? 4 : 5;
-    const abilitySize = touch
-      ? G.U.clamp(Math.floor((w - totalW - joinGap - 16 - abilityGap * 3) / 4), 22, 38)
-      : 34;
-    const abilityW = abilitySize * 4 + abilityGap * 3;
-    const groupW = abilityW + joinGap + totalW;
-    let barLeft = Math.max(4, (w - groupW) / 2);
-    let sx = barLeft + abilityW + joinGap;
-    // Por encima de la barra de inicio del iPhone (allí los toques a veces no llegan).
-    let sy = h - S - 18 - (touch ? Math.min(28, G.Touch.safeArea().bottom) : 0);
-    // En móvil, donde la haya puesto el jugador: el bloque objeto + todos los
-    // huecos (aunque aún no estén llenos), por su centro, como en el editor
-    // (layout-ui.js); los ataques nuevos van saliendo hacia la derecha.
+    const safeArea = touch ? G.Touch.safeArea() : { top: 0, right: 0, bottom: 0, left: 0 };
+    const layoutW = S + 18 + totalW;
+    const layoutLeft = G.U.clamp(w - layoutW - 8, 4, Math.max(4, w - layoutW - 4));
+    let sx = layoutLeft + S + 18;
+    let barLeft = sx;
+    let sy = touch ? Math.max(60, safeArea.top + 48) : 68;
+    // En móvil se conserva la posición personalizada que el jugador haya elegido.
     const pb = touch && G.Touch.spot('bar');
     if (pb) {
       const nAll = Math.max(n, pl.maxMoves);
-      const layoutW = S + 18 + abilityW + joinGap + nAll * S + (nAll - 1) * GAP;
-      const layoutLeft = G.U.clamp(pb[0] * w - layoutW / 2, 4, Math.max(4, w - layoutW - 4));
-      barLeft = layoutLeft + S + 18;
-      sx = barLeft + abilityW + joinGap;
+      const customLayoutW = S + 18 + nAll * S + (nAll - 1) * GAP;
+      const customLayoutLeft = G.U.clamp(pb[0] * w - customLayoutW / 2, 4, Math.max(4, w - customLayoutW - 4));
+      barLeft = customLayoutLeft + S + 18;
+      sx = barLeft;
       sy = G.U.clamp(pb[1] * h - S / 2, 24, h - S - 6);
     }
-    drawAbilities(ctx, pl, barLeft, sy, abilitySize, abilityGap);
+    const statusY = h - 2 - Math.min(28, safeArea.bottom);
+    drawPlayerStatus(ctx, w, statusY, pl);
     const BOND = '#ff8ad8';
     const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * pl.cdMul), 0, 1);
 
@@ -374,6 +353,17 @@ G.HUD = (() => {
       }
     }
 
+    // ---------- habilidades en la esquina inferior derecha ----------
+    const abilitySize = touch ? 40 : 38;
+    const abilityGap = touch ? 6 : 6;
+    const abilityX = touch
+      ? w - abilitySize * 2 - abilityGap - Math.min(44, safeArea.right) - 8
+      : w - abilitySize * 4 - abilityGap * 3 - 16;
+    const abilityY = touch
+      ? h - abilitySize * 2 - 35 - Math.min(20, safeArea.bottom)
+      : h - abilitySize - 25;
+    drawAbilities(ctx, pl, abilityX, abilityY, abilitySize, abilityGap, touch);
+
     // ---------- botón de pausa (táctil) ----------
     if (touch) {
       const sa = G.Touch.safeArea();
@@ -394,10 +384,30 @@ G.HUD = (() => {
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(180,200,230,.55)';
       ctx.fillText(touch ? 'Arrastra para moverte · toca habilidades o ataques para usarlos'
-                         : 'WASD moverse · Espacio dash · Q escudo · R definitiva · E pasiva · Z/X cambia ataque · Esc pausa', w / 2, h - 4);
+                         : 'WASD moverse · Espacio dash · Q escudo · R definitiva · E pasiva · Z/X cambia ataque · Esc pausa', w / 2, statusY - 60);
     }
 
-    function drawAbilities(ctx, pl, x0, y0, size, gap) {
+    function drawPlayerStatus(ctx, w, y, pl) {
+      const sw = Math.min(220, w - 24), x = (w - sw) / 2, top = y - 52;
+      roundRect(ctx, x, top, sw, 43, 9);
+      ctx.fillStyle = 'rgba(5,10,24,.78)'; ctx.fill();
+      ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(244,248,255,.38)'; ctx.stroke();
+      ctx.font = F(800, 12);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#eaf2ff';
+      ctx.fillText(pl.mon.name, x + 10, top + 15, sw - 60);
+      ctx.font = F(700, 11);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#ffcb3d';
+      ctx.fillText('Nv. ' + pl.level, x + sw - 10, top + 15);
+      bar(ctx, x + 10, top + 23, sw - 20, 11, pl.hp / pl.maxHp, '#ff5f6d');
+      ctx.font = F(700, 9);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(Math.ceil(pl.hp) + ' / ' + Math.round(pl.maxHp), w / 2, top + 32);
+    }
+
+    function drawAbilities(ctx, pl, x0, y0, size, gap, touch) {
       const entries = [
         { id: 'dash', icon: 'dash', key: 'SPC', title: 'Dash', cd: G.AbilityData.DASH.cooldown, use: () => G.ActiveAbilities.dash(pl) },
         { id: 'shield', icon: 'shield', key: 'Q', title: 'Escudo', cd: G.AbilityData.SHIELD.cooldown, use: () => G.ActiveAbilities.shield(pl) },
@@ -406,24 +416,29 @@ G.HUD = (() => {
         { id: 'passive', icon: 'sprout', key: 'E', title: 'Pasiva', cd: 0, use: () => G.RunUI.showPassiveInfo(pl) }
       ];
       entries.forEach((a, i) => {
-        const x = x0 + i * (size + gap), cd = pl.abilityCooldowns[a.id] || 0;
+        const col = touch ? i % 2 : i;
+        const row = touch ? Math.floor(i / 2) : 0;
+        const x = x0 + col * (size + gap), y = y0 + row * (size + (touch ? 14 : 0));
+        const cd = pl.abilityCooldowns[a.id] || 0;
         const ready = !a.locked && cd <= 0;
-        G.Touch.addButton(x, y0, size, size, a.use, 3);
-        roundRect(ctx, x, y0, size, size, 8);
+        G.Touch.addButton(x, y, size, size, a.use, 3);
+        roundRect(ctx, x, y, size, size, 8);
         ctx.fillStyle = ready ? 'rgba(20,42,66,.9)' : 'rgba(10,16,28,.8)';
         ctx.fill();
         ctx.lineWidth = 1.5; ctx.strokeStyle = ready ? '#9feaff' : 'rgba(180,200,230,.45)'; ctx.stroke();
         if (a.locked || cd > 0) {
           ctx.fillStyle = 'rgba(0,0,0,.6)';
-          roundRect(ctx, x, y0, size, size, 8); ctx.fill();
+          roundRect(ctx, x, y, size, size, 8); ctx.fill();
         }
-        const iconSize = Math.min(size - 8, 26);
-        G.Icons.draw(ctx, a.icon, x + (size - iconSize) / 2, y0 + 2, iconSize);
+        const iconSize = Math.min(size - 8, 30);
+        G.Icons.draw(ctx, a.icon, x + (size - iconSize) / 2, y + 2, iconSize);
         ctx.font = F(800, size < 30 ? 7 : 8);
         ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
-        ctx.fillText(a.locked ? 'LOCK' : cd > 0 ? Math.ceil(cd) + 's' : a.key, x + size / 2, y0 + size - 3);
+        if (!touch || a.locked || cd > 0) {
+          ctx.fillText(a.locked ? 'LOCK' : cd > 0 ? Math.ceil(cd) + 's' : a.key, x + size / 2, y + size - 3);
+        }
         ctx.font = F(600, 7); ctx.fillStyle = ready ? '#c9dbf5' : '#91a0bc';
-        ctx.fillText(a.title, x + size / 2, y0 + size + 9);
+        ctx.fillText(a.title, x + size / 2, y + size + 9);
       });
     }
 

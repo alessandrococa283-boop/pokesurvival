@@ -36,13 +36,13 @@ G.RunUI = (() => {
   function showPassiveInfo(pl) {
     const passive = G.PassiveData.get(pl.dex);
     const baby = pl.babyDex && G.BabyMons.BY_DEX[pl.babyDex];
-    $('passive-title').textContent = passive ? passive.name : baby ? baby.passive : 'Pasiva no implementada';
-    $('passive-level').textContent = passive ? 'Nivel ' + passive.level
-      : baby ? 'Compañero bebé: ' + baby.name : '—';
-    $('passive-desc').textContent = [
-      passive ? passive.description : baby ? '' : 'Este Pokémon todavía no tiene una pasiva innata implementada.',
-      baby ? `${baby.name} · ${baby.passive}: ${baby.description}` : ''
-    ].filter(Boolean).join(' ');
+    $('passive-title').textContent = passive ? passive.name : 'Sin habilidad innata';
+    $('passive-level').textContent = passive ? pl.mon.name + ' · Nivel ' + passive.level : pl.mon.name;
+    $('passive-desc').textContent = passive
+      ? passive.description : 'Este Pokémon no tiene una pasiva innata configurada.';
+    $('passive-baby-title').textContent = baby ? baby.name + ' · ' + baby.passive : 'Sin compañero bebé';
+    $('passive-baby-desc').textContent = baby
+      ? baby.description : 'Elige un compañero bebé en la colección para ver su habilidad aquí.';
     G.UI.show('scr-passive');
   }
 

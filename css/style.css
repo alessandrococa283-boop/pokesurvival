@@ -87,6 +87,16 @@ input { font: inherit; }
 .support-box { width: min(520px, 100%); }
 .support-box .support-free { margin: 18px 0; font-size: 19px; }
 .support-donate { display: inline-block; margin-top: 12px; text-decoration: none; }
+#scr-passive { z-index: 25; padding: 12px; background: transparent; pointer-events: none; }
+.passive-box { width: min(380px, calc(100% - 24px)); max-height: min(52dvh, 360px); padding: 14px 16px; pointer-events: auto; }
+.passive-box h2 { font-size: 20px; }
+.passive-entry { padding: 7px 2px; }
+.passive-entry + .passive-entry { margin-top: 6px; border-top: 1px solid rgba(244,248,255,.25); }
+.passive-entry > small { color: var(--gold); font-size: 11px; }
+.passive-entry h3 { margin: 3px 0; font-size: 16px; }
+.passive-entry p { margin: 4px 0; font-size: 13px; line-height: 1.4; }
+.passive-entry .sub { margin-bottom: 4px; }
+.passive-box .note { margin: 4px 0 0; font-size: 11px; }
 
 /* ---------- botones ---------- */
 .btn {

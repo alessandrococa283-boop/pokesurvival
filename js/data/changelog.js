@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-21', title: ['HUD táctil y habilidades innatas', 'Touch HUD and Innate Abilities'], chg: [
+    ['La vida, el nombre y el nivel del Pokémon aparecen centrados junto al borde inferior. Los ataques y el objeto equipado están en la esquina superior derecha, alineados y con recuadros del mismo tamaño. Las habilidades se reorganizaron abajo a la derecha en una disposición compacta para pantallas táctiles. La ficha de pasivas muestra por separado la habilidad del Pokémon y, debajo, la de su compañero bebé sin detener la partida.',
+     'The Pokémon’s health, name and level appear centered near the bottom edge. Attacks and the equipped item are aligned in same-sized boxes in the top-right corner. Abilities are arranged compactly at the bottom right for touchscreens. The passive panel shows the Pokémon’s ability separately from its baby companion’s below, without pausing the game.']
+  ] },
   { d: '2026-10-21', title: ['Donaciones voluntarias y créditos', 'Voluntary Donations and Credits'], new: [
     ['PokéSurvival sigue siendo completamente gratuito. Añadimos un enlace opcional de Ko-fi para quien quiera ayudar a mantener el servidor, junto con los créditos de diseño y el contacto del proyecto.',
      'PokéSurvival remains completely free. We added an optional Ko-fi link for anyone who wants to help keep the server running, along with the project design credits and contact information.']

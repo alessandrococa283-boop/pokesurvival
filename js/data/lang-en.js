@@ -302,6 +302,13 @@ G.I18n.add({
   'Proyecto fan inspirado en PokéSurvivor.': 'A fan project inspired by PokéSurvivor.',
   'Diseñado por': 'Designed by', 'Contacto:': 'Contact:',
   'Donar en Ko-fi': 'Donate on Ko-fi',
+  'Habilidades innatas': 'Innate Abilities', 'HABILIDAD DEL POKÉMON': 'POKÉMON ABILITY',
+  'HABILIDAD DEL COMPAÑERO BEBÉ': 'BABY COMPANION ABILITY', 'Sin habilidad innata': 'No innate ability',
+  'Sin compañero bebé': 'No baby companion', 'Elige un compañero bebé en la colección para ver su habilidad aquí.':
+    'Choose a baby companion in the collection to see its ability here.',
+  'Este Pokémon no tiene una pasiva innata configurada.': 'This Pokémon has no innate passive configured.',
+  'Pulsa E o Cerrar. La partida continúa mientras consultas las habilidades.':
+    'Press E or Close. The game continues while you view the abilities.',
   'Mejoras': 'Upgrades', 'Haz más fuerte cada run': 'Make every run stronger', '9 regiones · Pokémon y shinies': '9 regions · Pokémon and shinies',
   'Misiones': 'Missions', 'Misiones, logros y perfil': 'Missions, achievements and profile', 'Amigos': 'Friends', 'Juega en grupo, hasta 5': 'Play in a group, up to 5',
   'Ranking': 'Leaderboard', 'Quién aguanta más': 'Who survives longest', 'Ajustes': 'Settings', 'Sonido, gráficos, controles y cuenta': 'Sound, graphics, controls and account',
