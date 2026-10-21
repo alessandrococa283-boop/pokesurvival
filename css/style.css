@@ -84,6 +84,9 @@ input { font: inherit; }
 .sub { color: var(--muted); margin: 0 0 16px; font-size: 15px; }
 .gold { color: var(--gold); }
 .center { text-align: center; }
+.support-box { width: min(520px, 100%); }
+.support-box .support-free { margin: 18px 0; font-size: 19px; }
+.support-donate { display: inline-block; margin-top: 12px; text-decoration: none; }
 
 /* ---------- botones ---------- */
 .btn {

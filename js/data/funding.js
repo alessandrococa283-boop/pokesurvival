@@ -1,6 +1,5 @@
-/* PokéSurvival no habilita donaciones ni patrocinios. */
 G.Funding = {
-  kofi: '',
+  kofi: 'alepablo12',
   sponsors: '',
   costs: [],
   get url() { return this.kofi ? 'https://ko-fi.com/' + this.kofi : ''; }

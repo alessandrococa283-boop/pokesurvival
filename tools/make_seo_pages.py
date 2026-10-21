@@ -151,7 +151,7 @@ def cta(pid, lang, text):
 # ================= guía =================
 FAQ = {
  'es': [
-  ('¿PokéSurvival es gratis?', 'Sí. Es un proyecto fan gratuito y sin ánimo de lucro, sin anuncios, compras ni donaciones.'),
+  ('¿PokéSurvival es gratis?', 'Sí. Es un proyecto fan completamente gratuito y sin ánimo de lucro, sin anuncios ni compras. Las donaciones son voluntarias y ayudan a mantener el servidor; no dan ventajas en el juego.'),
   ('¿Hay que descargar algo?', 'No. Se juega en el navegador, en PC, tablet o móvil. Si quieres, puedes instalarlo como app con «Añadir a pantalla de inicio».'),
   ('¿Se puede jugar en el móvil?', 'Sí, en horizontal. Pon el dedo en cualquier parte de la pantalla y arrastra para moverte (el joystick aparece donde tocas); toca el botón de arriba a la derecha para pausar.'),
   ('¿Está en inglés?', 'Sí: el juego sale en español o en inglés según el idioma de tu navegador, y se puede cambiar en Ajustes.'),
@@ -162,7 +162,7 @@ FAQ = {
   ('¿Se guarda mi progreso?', 'Con una cuenta (nombre y contraseña o Google) tu partida se guarda en la nube y la puedes seguir en cualquier dispositivo. Como invitado se juega al momento, pero no se guarda.'),
   ('¿Es un juego oficial de Pokémon?', 'No. Es un proyecto hecho por fans, gratuito y sin ánimo de lucro, sin relación con Nintendo, GAME FREAK ni The Pokémon Company.')],
  'en': [
-  ('Is PokéSurvival free?', 'Yes. It is a free, non-commercial fan project with no ads, purchases or donations.'),
+  ('Is PokéSurvival free?', 'Yes. It is a completely free, non-commercial fan project with no ads or purchases. Donations are optional and help keep the server running; they provide no in-game benefits.'),
   ('Do I need to download anything?', 'No. You play in your browser on PC, tablet or phone. If you like, you can install it as an app with “Add to Home Screen”.'),
   ('Can I play on my phone?', 'Yes, in landscape. Put your finger anywhere on the screen and drag to move (the joystick appears where you touch); tap the top-right button to pause.'),
   ('Is it in English?', 'Yes: the game shows up in English or Spanish depending on your browser language, and you can change it in Settings.'),
@@ -523,7 +523,7 @@ def support(lang):
     if lang == 'es':
         h1 = 'Acerca de PokéSurvival'
         body = f"""<article class="doc"><h1>{h1}</h1>
-<p class="lead">PokéSurvival es un proyecto fan gratuito y no oficial, derivado e inspirado en PokéSurvivor. No ofrece compras, anuncios, donaciones ni ventajas de pago.</p>
+<p class="lead">PokéSurvival es un proyecto fan completamente gratuito y no oficial, derivado e inspirado en PokéSurvivor. No tiene compras ni anuncios. Las donaciones son voluntarias, ayudan a mantener el servidor y no ofrecen ventajas en el juego.</p>
 <p>El código derivado se distribuye bajo PolyForm Noncommercial 1.0.0. Los créditos y las licencias de los sprites y otros recursos se detallan en el repositorio.</p>
 <p>Pokémon y los nombres y personajes relacionados pertenecen a sus respectivos titulares. Este proyecto no está afiliado ni aprobado por ellos.</p>
 {cta(pid, lang, 'Volver al juego')}</article>"""
@@ -531,7 +531,7 @@ def support(lang):
     else:
         h1 = 'About PokéSurvival'
         body = f"""<article class="doc"><h1>{h1}</h1>
-<p class="lead">PokéSurvival is a free, unofficial fan project derived from and inspired by PokéSurvivor. It has no purchases, ads, donations or pay-to-win features.</p>
+<p class="lead">PokéSurvival is a completely free, unofficial fan project derived from and inspired by PokéSurvivor. It has no purchases or ads. Donations are optional, help keep the server running and provide no in-game benefits.</p>
 <p>Derived code is distributed under PolyForm Noncommercial 1.0.0. Resource and sprite credits and licenses are listed in the repository.</p>
 <p>Pokémon and related names and characters belong to their respective owners. This project is not affiliated with or endorsed by them.</p>
 {cta(pid, lang, 'Back to the game')}</article>"""

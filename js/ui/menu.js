@@ -6,7 +6,7 @@ G.MenuUI = (() => {
   let storyDex = null, storyQueued = false;
 
   function init() {
-    const ICON = { play: 'ball', story: 'medal2', 'gym-medals': 'medal3', dex: 'book', upgrades: 'up', gacha: 'ball4', 'baby-gacha': 'ticket10', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
+    const ICON = { play: 'ball', story: 'medal2', 'gym-medals': 'medal3', dex: 'book', upgrades: 'up', gacha: 'ball4', 'baby-gacha': 'ticket10', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear', support: 'heart' };
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
       b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 26)}</span>`);
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
@@ -23,6 +23,7 @@ G.MenuUI = (() => {
         else if (go === 'friends') G.FriendsUI.open();
         else if (go === 'rank') G.RankingUI.open();
         else if (go === 'settings') G.SettingsUI.open();
+        else if (go === 'support') G.SupportUI.open();
       };
     });
     document.querySelectorAll('[data-back]').forEach(b => { b.onclick = open; });

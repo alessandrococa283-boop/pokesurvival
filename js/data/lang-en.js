@@ -296,6 +296,12 @@ G.I18n.add({
 
   // ---------------- menú ----------------
   'Jugar': 'Play', 'Entra en la mazmorra': 'Enter the dungeon', 'Pokémon': 'Pokémon', 'Tu colección': 'Your collection',
+  'Donar': 'Donate', 'Ayuda a mantener el servidor': 'Help keep the server running', 'Apoya PokéSurvival': 'Support PokéSurvival',
+  'PokéSurvival es completamente gratuito. Tu donación es voluntaria y ayuda a mantener el servidor.':
+    'PokéSurvival is completely free. Your donation is voluntary and helps keep the server running.',
+  'Proyecto fan inspirado en PokéSurvivor.': 'A fan project inspired by PokéSurvivor.',
+  'Diseñado por': 'Designed by', 'Contacto:': 'Contact:',
+  'Donar en Ko-fi': 'Donate on Ko-fi',
   'Mejoras': 'Upgrades', 'Haz más fuerte cada run': 'Make every run stronger', '9 regiones · Pokémon y shinies': '9 regions · Pokémon and shinies',
   'Misiones': 'Missions', 'Misiones, logros y perfil': 'Missions, achievements and profile', 'Amigos': 'Friends', 'Juega en grupo, hasta 5': 'Play in a group, up to 5',
   'Ranking': 'Leaderboard', 'Quién aguanta más': 'Who survives longest', 'Ajustes': 'Settings', 'Sonido, gráficos, controles y cuenta': 'Sound, graphics, controls and account',

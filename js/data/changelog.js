@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-21', title: ['Donaciones voluntarias y créditos', 'Voluntary Donations and Credits'], new: [
+    ['PokéSurvival sigue siendo completamente gratuito. Añadimos un enlace opcional de Ko-fi para quien quiera ayudar a mantener el servidor, junto con los créditos de diseño y el contacto del proyecto.',
+     'PokéSurvival remains completely free. We added an optional Ko-fi link for anyone who wants to help keep the server running, along with the project design credits and contact information.']
+  ] },
   { d: '2026-10-21', title: ['Ataques, compañeros bebé y cooperativo', 'Attacks, Baby Companions and Co-op'], new: [
     ['Al evolucionar eliges un ataque extra que se lanza junto al principal. Los Pokémon sin evolución y los que evolucionan a niveles altos reciben una elección adicional al nivel evolutivo medio. Los compañeros bebé ya aparecen junto al jugador y sus pasivas tienen efecto durante la partida.',
      'When a Pokémon evolves, choose an extra attack that launches alongside its main attack. Pokémon without evolutions and those that evolve at high levels receive an extra choice at the average evolution level. Baby companions now appear beside the player and their passives work during runs.'],
