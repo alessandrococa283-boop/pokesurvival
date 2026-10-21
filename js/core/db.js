@@ -81,7 +81,10 @@ G.DB = (() => {
       personality: null,      // { trait, scores }
       upgrades: {},           // (antiguo) mejoras de la cuenta; ahora van por Pokémon
       pupg: {},               // dex -> { id -> nivel }: mejoras de cada Pokémon
-      tickets: { t1: 0, t10: 0 },   // tickets del gacha (x1 y x10)
+      tickets: { t1: 0, t10: 0 },   // t1: gacha normal; t10: ticket morado exclusivo para bebés
+      babyEggs: [],
+      babyOwned: {},
+      babyPartner: null,
       pity: {},               // generación del banner -> tiradas sin ★5
       legends: {},            // dex -> fecha: legendarios vencidos en grietas
       arenas: {},             // tipo -> fecha: arenas de grieta ganadas
@@ -91,7 +94,7 @@ G.DB = (() => {
       ach: {},                // id -> fecha: logros conseguidos
       missions: {},           // misiones del día / semana (systems/progress.js)
       profile: { favs: [], title: '' },   // perfil público: 3 favoritos y título
-      stats: { runs: 0, bestTime: 0, bestLevel: 0, totalKills: 0, pulls: 0, coinsEarned: 0, shinies: 0,
+      stats: { runs: 0, bestTime: 0, bestLevel: 0, totalKills: 0, pulls: 0, babyPulls: 0, coinsEarned: 0, shinies: 0,
                bossesTotal: 0, riftWins: 0, evolutions: 0, missionsDone: 0, groupRuns: 0, bestGroupTime: 0 }
     };
   }
@@ -111,6 +114,8 @@ G.DB = (() => {
       s.pupgDone = true;
     }
     s.tickets = Object.assign({ t1: 0, t10: 0 }, s.tickets);
+    s.babyEggs = Array.isArray(s.babyEggs) ? s.babyEggs : [];
+    s.babyOwned = s.babyOwned || {};
     sanitize(s);
     s.v = VERSION;
     return s;
@@ -127,6 +132,15 @@ G.DB = (() => {
     s.coins = n(s.coins);
     s.tickets.t1 = n(s.tickets.t1);
     s.tickets.t10 = n(s.tickets.t10);
+    if (G.BabyMons) {
+      if (!isObj(s.babyOwned)) s.babyOwned = {};
+      for (const dex of Object.keys(s.babyOwned)) if (!G.BabyMons.BY_DEX[dex]) delete s.babyOwned[dex];
+      s.babyEggs = s.babyEggs.filter(egg => egg && typeof egg.id === 'string' &&
+        G.BabyMons.BY_DEX[egg.dex] && Number.isFinite(+egg.hatchAt) && Number.isFinite(+egg.acquiredAt))
+        .map(egg => ({ id: egg.id, dex: +egg.dex, acquiredAt: n(egg.acquiredAt), hatchAt: n(egg.hatchAt) }));
+      const babyPartner = Number(s.babyPartner);
+      s.babyPartner = G.BabyMons.BY_DEX[babyPartner] && s.babyOwned[babyPartner] ? babyPartner : null;
+    }
     if (isObj(s.led)) {
       for (const dev of Object.keys(s.led)) {
         const e = s.led[dev];
@@ -260,6 +274,14 @@ G.DB = (() => {
         if (!r[coll][k] || (older[coll][k].at || 0) < (r[coll][k].at || 0)) r[coll][k] = older[coll][k];
       }
     }
+    r.babyOwned = r.babyOwned || {};
+    for (const dex in older.babyOwned || {}) {
+      if (!r.babyOwned[dex] || (older.babyOwned[dex].at || 0) < (r.babyOwned[dex].at || 0))
+        r.babyOwned[dex] = older.babyOwned[dex];
+    }
+    const eggs = new Map((r.babyEggs || []).map(egg => [egg.id, egg]));
+    for (const egg of older.babyEggs || []) if (!eggs.has(egg.id)) eggs.set(egg.id, egg);
+    r.babyEggs = [...eggs.values()];
     for (const k in older.upgrades || {}) r.upgrades[k] = Math.max(r.upgrades[k] || 0, older.upgrades[k]);
     r.pupg = r.pupg || {};
     for (const d in older.pupg || {}) {
@@ -295,6 +317,7 @@ G.DB = (() => {
     if (r.starter == null) r.starter = older.starter;
     if (r.personality == null) r.personality = older.personality;
     if (r.partner == null || !r.owned[r.partner]) { r.partner = older.partner; r.partnerShiny = older.partnerShiny; }
+    if (r.babyPartner == null || !r.babyOwned[r.babyPartner]) r.babyPartner = older.babyPartner;
     r.created = Math.min(a.created || Date.now(), b.created || Date.now());
     r.updated = Math.max(a.updated || 0, b.updated || 0);
     return r;

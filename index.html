@@ -188,6 +188,7 @@
         <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
         <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
         <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
+        <button class="menu-item" data-go="baby-gacha">Compañeros bebé<small>Incuba huevos y reúne Pokémon bebé</small></button>
         <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
         <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, hasta 4</small></button>
         <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
@@ -222,7 +223,7 @@
 
 <div id="topbar" class="topbar hidden">
   <div class="pill"><span class="coin"></span><span id="coins">0</span></div>
-  <div class="pill" id="tickets-pill" title="Tickets del gacha"></div>
+  <div class="pill" id="tickets-pill" title="Tickets del gacha y huevos bebé"></div>
   <div class="pill" id="user-pill"></div>
   <button id="btn-news" class="btn small ghost news-btn" title="Novedades"></button>
   <button id="btn-sound" class="btn small ghost" title="Sonido"></button>
@@ -489,24 +490,47 @@
 <section id="scr-gacha" class="scr dim hidden">
   <div class="box wide">
     <div class="row between"><h2>Gacha</h2><button class="btn small ghost" data-back>Volver</button></div>
-    <div class="gen-tabs" id="gacha-gens"></div>
-    <div class="split" style="margin-top:8px">
-      <div>
-        <div class="banner" id="banner">
-          <h3 id="banner-title"></h3>
-          <p id="banner-desc" style="margin:4px 0 6px"></p>
-          <p class="sub" id="gacha-owned" style="margin:0"></p>
-          <div class="feat" id="gacha-feat"></div>
+    <div class="tabs" id="gacha-kind-tabs">
+      <button class="tab on" data-kind="normal">Pokémon</button>
+      <button class="tab" data-kind="babies">Compañeros bebé</button>
+    </div>
+    <div id="gacha-normal-view">
+      <div class="gen-tabs" id="gacha-gens"></div>
+      <div class="split" style="margin-top:8px">
+        <div>
+          <div class="banner" id="banner">
+            <h3 id="banner-title"></h3>
+            <p id="banner-desc" style="margin:4px 0 6px"></p>
+            <p class="sub" id="gacha-owned" style="margin:0"></p>
+            <div class="feat" id="gacha-feat"></div>
+          </div>
+          <div class="row" style="margin-top:14px">
+            <button id="pull-1" class="btn grow" data-sfx="none">Tirar ×1 · <span id="cost-1"></span></button>
+            <button id="pull-10" class="btn gold grow" data-sfx="none">Tirar ×10 · <span id="cost-10"></span></button>
+          </div>
+          <p class="note tickets-line" id="gacha-tickets"></p>
+          <p class="note" id="gacha-pity"></p>
         </div>
-        <div class="row" style="margin-top:14px">
-          <button id="pull-1" class="btn grow" data-sfx="none">Tirar ×1 · <span id="cost-1"></span></button>
-          <button id="pull-10" class="btn gold grow" data-sfx="none">Tirar ×10 · <span id="cost-10"></span></button>
-          <button id="pull-10b" class="btn gold grow" data-sfx="none">Tirar ×10 · <span id="cost-10b"></span></button>
-        </div>
-        <p class="note tickets-line" id="gacha-tickets"></p>
-        <p class="note" id="gacha-pity"></p>
+        <div class="panel rates" id="gacha-rates"></div>
       </div>
-      <div class="panel rates" id="gacha-rates"></div>
+    </div>
+    <div id="gacha-baby-view" class="hidden">
+      <div class="banner baby-banner">
+        <img class="baby-main-egg" src="assets/huevos/sprites%20huevos/mystery-egg.png" alt="Huevo misterioso">
+        <div>
+          <h3>Gacha de compañeros bebé</h3>
+          <p class="sub">Usa un ticket morado y 700 monedas para conseguir un huevo. Eclosiona mientras juegas o cuando vuelvas.</p>
+          <p id="baby-owned-count" class="sub"></p>
+          <p id="baby-ticket-count" class="sub"></p>
+          <button id="pull-baby" class="btn gold" data-sfx="none">Conseguir huevo · <span id="baby-cost"></span></button>
+        </div>
+      </div>
+      <div class="panel rates" id="baby-rates"></div>
+      <p class="note" id="baby-active"></p>
+      <h3>Incubadora</h3>
+      <div id="baby-eggs" class="baby-eggs"></div>
+      <h3>Compañeros bebé</h3>
+      <div id="baby-collection" class="baby-collection"></div>
     </div>
   </div>
 </section>
@@ -589,6 +613,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/app.min.js?v=77cf76ee03"></script>
+<script defer src="js/app.min.js?v=0d6f677d96"></script>
 </body>
 </html>

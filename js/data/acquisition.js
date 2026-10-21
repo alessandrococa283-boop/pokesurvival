@@ -2,8 +2,8 @@
 G.Acquisition = {
   gacha: {
     costs: {
-      single: { t1: 10, coins: 2000 },
-      ten: { t1: 100, t10: 10, coins: 20000 }
+      single: { t1: 1, coins: 500 },
+      ten: { t1: 10, coins: 4000 }
     },
     rates: [[1, 65], [2, 23], [3, 9], [4, 2.5], [5, 0.5]],
     pityFive: 70,
@@ -11,6 +11,11 @@ G.Acquisition = {
     shinyRate: 1 / 100,
     duplicateRefund: { 1: 15, 2: 30, 3: 60, 4: 120, 5: 300 },
     shinyDuplicateMultiplier: 3
+  },
+  babyGacha: {
+    cost: { t10: 1, coins: 700 },
+    rates: [[1, 50], [2, 25], [3, 15], [4, 8], [5, 2]],
+    duplicateCoins: { 1: 100, 2: 200, 3: 350, 4: 600, 5: 1000 }
   },
   tickets: {
     unitsPerBundle: 10,

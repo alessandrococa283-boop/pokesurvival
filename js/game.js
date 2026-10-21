@@ -505,9 +505,9 @@ G.Game = (() => {
       return;
     }
     if (p.kind === 'ticket' || p.kind === 'ticket10') {
-      if (p.kind === 'ticket') pl.t1++; else pl.t10++;
+      if (p.kind === 'ticket') pl.t1 += p.value; else pl.t10 += p.value;
       bankTickets();
-      G.FX.dmgText(who.x, who.y - who.bodyH - 8, p.kind === 'ticket' ? '+1 ticket' : '¡Ticket ×10!', p.kind === 'ticket' ? '#ffd23f' : '#d9a6ff', true);
+      G.FX.dmgText(who.x, who.y - who.bodyH - 8, p.kind === 'ticket' ? '+' + p.value + ' ticket' : '¡Ticket morado bebé!', p.kind === 'ticket' ? '#ffd23f' : '#d9a6ff', true);
       G.FX.ring(who.x, who.y, 6, 50, p.kind === 'ticket' ? '#ffd23f' : '#c47bff', 0.4, 3);
       return;
     }

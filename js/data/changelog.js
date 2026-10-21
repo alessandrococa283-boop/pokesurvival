@@ -6,9 +6,15 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-20', title: ['Gacha de compañeros bebé', 'Baby Companion Gacha'], new: [
+    ['Ya puedes conseguir huevos bebé con un ticket morado y 700 monedas. El tiempo de incubación depende de la rareza; al eclosionar, el Pokémon se añade a tu colección y puedes elegir un compañero bebé.',
+     'You can now get baby Pokémon eggs with one purple ticket and 700 coins. Incubation time depends on rarity; after hatching, the Pokémon joins your collection and you can select a baby companion.'],
+    ['El ticket morado ahora se reserva para los compañeros bebé. El gacha normal cuesta 1 ticket y 500 monedas por tirada, o 10 tickets y 4.000 monedas por diez.',
+     'Purple tickets are now reserved for baby companions. The regular gacha costs 1 ticket and 500 coins per pull, or 10 tickets and 4,000 coins for ten.']
+  ] },
   { d: '2026-10-20', title: ['Gacha y economía de tickets', 'Gacha and Ticket Economy'], chg: [
-    ['El gacha ahora cuesta tickets y Pokémonedas: 10 tickets y 2.000 monedas por Pokémon, o 100 tickets y 20.000 monedas por diez. Los tickets ×10 antiguos siguen siendo válidos; las probabilidades se ajustan a las rarezas disponibles en cada banner y se muestran en pantalla.',
-     'The gacha now costs tickets and Pokécoins: 10 tickets and 2,000 coins per Pokémon, or 100 tickets and 20,000 coins for ten. Existing ×10 tickets remain valid; probabilities adapt to the rarities available in each banner and are shown on screen.'],
+    ['Las probabilidades se ajustan a las rarezas disponibles en cada banner y se muestran en pantalla.',
+     'Probabilities adapt to the rarities available in each banner and are shown on screen.'],
     ['Se redujeron las recompensas de tickets de misiones y logros, además de las de cofres, jefes y eventos. Los saldos existentes se conservan.',
      'Ticket rewards from missions and achievements, chests, bosses and events were reduced. Existing balances are preserved.']
   ] },

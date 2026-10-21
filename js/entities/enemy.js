@@ -177,7 +177,7 @@
       }
       G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend, !!this.judge);
       if (this.golden && Math.random() < 0.35) G.Pickups.drop('coin', this.x + 6, this.y - 4, 3);
-      // Duende del tesoro: Meowth suelta monedas; Gholdengo, un ticket ×10.
+      // Duende del tesoro: Meowth suelta monedas; Gholdengo, un ticket morado para bebés.
       if (this.behavior === 'thief') {
         const n = this.def.loot === 'ticket10' ? 6 : 20;
         for (let i = 0; i < n; i++) G.Pickups.drop('coin', this.x + G.U.rand(-36, 36), this.y + G.U.rand(-26, 26), 5);

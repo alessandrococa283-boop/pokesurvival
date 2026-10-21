@@ -9,22 +9,20 @@
  * Shiny: 1 de cada 100 tiradas sale en su versión shiny.
  * Repetidos: se convierten en Pokémonedas (los shiny repetidos, el triple).
  *
- * Cada tirada consume tickets y monedas. Los tickets ×10 antiguos conservan
- * su equivalencia de diez tickets normales.
+ * Cada tirada consume tickets normales y monedas. El ticket morado es exclusivo
+ * del gacha de Pokémon bebé.
  */
 G.Gacha = (() => {
   const cfg = G.Acquisition.gacha;
   let pulling = false;
 
   /** Devuelve el coste completo si el saldo permite pagarlo; no modifica el guardado. */
-  function costOf(save, n, use = 't1') {
-    if (!save || (n !== 1 && n !== 10) || (use !== 't1' && use !== 't10') || (n === 1 && use !== 't1')) return null;
+  function costOf(save, n) {
+    if (!save || (n !== 1 && n !== 10)) return null;
     const price = n === 1 ? cfg.costs.single : cfg.costs.ten;
     const t = save.tickets || { t1: 0, t10: 0 };
-    const cost = n === 1 || use === 't1'
-      ? { t1: price.t1, t10: 0, coins: price.coins }
-      : { t1: 0, t10: price.t10, coins: price.coins };
-    return t.t1 >= cost.t1 && t.t10 >= cost.t10 && save.coins >= cost.coins ? cost : null;
+    const cost = { t1: price.t1, coins: price.coins };
+    return t.t1 >= cost.t1 && save.coins >= cost.coins ? cost : null;
   }
   const RATES = cfg.rates;
   const PITY_5 = cfg.pityFive;
@@ -81,15 +79,14 @@ G.Gacha = (() => {
    * Devuelve null si no hay recursos suficientes o no hay especies en el banner:
    *   { dex, rarity, shiny, isNew, refund }
    */
-  function pull(save, n, gen = 1, use = 't1') {
+  function pull(save, n, gen = 1) {
     if (pulling) return null;
-    const cost = costOf(save, n, use);
+    const cost = costOf(save, n);
     if (!cost || !BANNERS[gen - 1] || !G.DEX.some(p => inBanner(p, gen))) return null;
     pulling = true;
     try {
       save.tickets = save.tickets || { t1: 0, t10: 0 };
       save.tickets.t1 -= cost.t1;
-      save.tickets.t10 -= cost.t10;
       save.coins -= cost.coins;
       save.pity = save.pity || {};
       save.shiny = save.shiny || {};

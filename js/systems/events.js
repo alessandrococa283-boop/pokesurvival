@@ -12,7 +12,7 @@
  *           5 veces, se une a tu colección.
  *
  * Duendes del tesoro (1-2 por partida, ver Enemy behavior 'thief'): un
- * Meowth cargado de monedas (o, 1 de cada 4, un Gholdengo con un ticket ×10)
+ * Meowth cargado de monedas (o, 1 de cada 8, un Gholdengo con un ticket morado para bebés)
  * que huye y se escapa a los 15 s si no lo atrapas.
  *
  * Cooperativo: decide el anfitrión y avisa con 'ev' (ver coop.js). Todos ven lo
@@ -118,7 +118,7 @@ G.Events = (() => {
       e.life = THIEF_LIFE;
       G.EnemyMgr.add(e);
       G.FX.ring(x, y, 4, 40, '#ffd23f', 0.5, 3);
-      G.Spawner.say(gold ? '¡Un ' + mon.name + ' con un ticket ×10! ¡Atrápalo antes de que huya!'
+      G.Spawner.say(gold ? '¡Un ' + mon.name + ' con un ticket morado para bebés! ¡Atrápalo antes de que huya!'
                          : '¡Un ' + mon.name + ' cargado de monedas! ¡Atrápalo antes de que huya!', 3.2);
       G.Audio.sfx('shiny');
       return;
