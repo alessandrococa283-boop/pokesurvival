@@ -513,6 +513,25 @@
 </div>
 
 <!-- ====== Durante la run ====== -->
+<section id="scr-start-move" class="scr dim hidden">
+  <div class="box wide start-move-box">
+    <h2>Elige tu ataque inicial</h2>
+    <p class="sub" id="start-move-sub">Selecciona un movimiento compatible con tu Pokémon.</p>
+    <div id="start-move-cards" class="cards start-move-cards"></div>
+    <p class="note">Pulsa una tarjeta o una tecla del 1 al 9.</p>
+  </div>
+</section>
+
+<section id="scr-passive" class="scr dim hidden">
+  <div class="box center" style="width:min(440px,100%)">
+    <div class="row between"><h2>Pasiva innata</h2><button class="btn small ghost" id="passive-close">Cerrar</button></div>
+    <h3 id="passive-title"></h3>
+    <p class="sub" id="passive-level"></p>
+    <p id="passive-desc"></p>
+    <p class="note">Pulsa E para cerrar. La partida continúa mientras consultas la pasiva.</p>
+  </div>
+</section>
+
 <section id="scr-levelup" class="scr dim hidden">
   <div class="box center">
     <h2>¡Nivel <span id="lvl-num">2</span>!</h2>
@@ -544,7 +563,7 @@
 <section id="scr-pause" class="scr dim hidden">
   <div class="box center" style="width:min(460px,100%)">
     <h2>Pausa</h2>
-    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · <kbd>1</kbd>–<kbd>4</kbd> movimiento · <kbd>Q</kbd>/<kbd>E</kbd> ciclar · <kbd>Esc</kbd> pausa</p>
+    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · <kbd>Espacio</kbd> dash · <kbd>Q</kbd> escudo · <kbd>R</kbd> definitiva · <kbd>E</kbd> pasiva · <kbd>Z</kbd>/<kbd>X</kbd> ataque · <kbd>Esc</kbd> pausa</p>
     <p class="sub touch-hint">Arrastra el dedo para moverte · toca un ataque para cambiarlo</p>
     <p id="pause-coop" class="note hidden">Partida en grupo: el juego sigue mientras estás aquí.</p>
     <div id="pause-sound" class="sound-inline"></div>
@@ -565,6 +584,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/app.min.js?v=c98f37b464"></script>
+<script defer src="js/app.min.js?v=2e83ca2b10"></script>
 </body>
 </html>

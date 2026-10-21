@@ -1,0 +1,89 @@
+Pokémon bebé clasificados por rareza y pasiva
+Común — bonificaciones básicas
+Huevos: 2 minutos por eclosión.
+Pichu — Descarga estática
+Común
+Otorga un 2,5 % de probabilidad de paralizar al enemigo golpeado durante 1 segundo. Los jefes reciben una reducción de la duración.
+Cleffa — Polvo curativo
+Común
+Aumenta un 3 % la eficacia de las curaciones recibidas, incluyendo curación por ataques y habilidades.
+Igglybuff — Encanto
+Común
+Cada ataque tiene un 2 % de probabilidad de enamorar al enemigo durante 2 segundos, haciendo que ataque a otros enemigos cercanos en lugar de al jugador.
+Togepi — Dicha
+Común
+Aumenta un 3 % la probabilidad de obtener objetos de recuperación de los enemigos derrotados.
+Poco común — utilidad y supervivencia
+Huevos: 5 minutos por eclosión.
+Azurill — Cola saltarina
+Poco común
+Aumenta un 5 % la velocidad de movimiento y un 3 % el alcance de recolección de experiencia.
+Wynaut — Contraataque
+Poco común
+Otorga un 4 % de probabilidad de reflejar parte del daño recibido al enemigo atacante. El daño reflejado equivale al 20 % del daño recibido.
+Budew — Polen revitalizante
+Poco común
+Aumenta un 5 % la duración de los efectos de veneno y otras alteraciones de estado aplicadas por el jugador.
+Chingling — Resonancia
+Poco común
+Aumenta un 4 % el área de efecto de los ataques que dañan a varios enemigos.
+Raro — especialización de combate
+
+Huevos: 10 minutos por eclosión.
+Tyrogue — Espíritu luchador
+Raro
+Aumenta un 6 % el daño de los ataques cuerpo a cuerpo. Si la vida del jugador baja del 30 %, el bono aumenta temporalmente al 10 %.
+Smoochum — Beso gélido
+Raro
+Otorga un 5 % de probabilidad de ralentizar a los enemigos golpeados un 30 % durante 2 segundos.
+Elekid — Sobrecarga
+Raro
+Aumenta un 6 % la velocidad de ataque de las habilidades eléctricas y un 3 % la de los demás ataques.
+Magby — Combustión
+Raro
+Aumenta un 6 % el daño por quemadura y un 3 % la probabilidad de aplicar quemadura.
+Épico — pasivas de alto impacto
+
+Huevos: 20 minutos por eclosión.
+
+Bonsly — Defensa pétrea
+Épico
+Reduce un 6 % el daño recibido. Si el jugador permanece 3 segundos sin recibir daño, obtiene una barrera equivalente al 2 % de su vida máxima.
+Mime Jr. — Pantalla protectora
+Épico
+Reduce un 8 % el daño de proyectiles enemigos y un 4 % el daño de contacto.
+Happiny — Don de la vida
+Épico
+Aumenta un 8 % las curaciones recibidas y otorga un 5 % de probabilidad de recuperar un pequeño porcentaje de vida al derrotar a un enemigo de élite.
+
+Riolu — Aura combativa
+Épico
+Aumenta un 8 % el daño mientras haya al menos 10 enemigos cerca del jugador. El bono desaparece cuando la zona vuelve a estar despejada.
+
+Legendario — pasivas extraordinarias
+
+Huevos: 35 minutos por eclosión.
+
+Munchlax — Voracidad
+Legendario
+Aumenta un 12 % la cantidad de experiencia obtenida y un 8 % la eficacia de los objetos de recuperación.
+
+Mantyke — Marea regeneradora
+Legendario
+Otorga un 10 % de probabilidad de recuperar el 2 % de la vida máxima al derrotar enemigos con ataques de tipo Agua. Tiene un enfriamiento interno de 2 segundos.
+
+
+Toxel — Toxina eléctrica
+Legendario
+Los ataques eléctricos tienen un 12 % de probabilidad de electrocutar al enemigo durante 1,5 segundos. Los enemigos electrocutados reciben un 10 % más de daño eléctrico durante ese efecto.
+
+
+
+3. Resumen del sistema para implementar
+Rareza	Tiempo	
+Común	        2 min	
+Poco común	5 min	
+Raro	        10 min	
+Épico	        20 min	
+Legendario	35 min	
+Total		19
