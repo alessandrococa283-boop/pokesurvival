@@ -29,6 +29,7 @@ const DIRECTORIES = [
   'shinies',
   'tipos'
 ];
+const EXCLUDED_HOSTING_DIRECTORIES = new Set([path.join('assets', 'cards')]);
 
 function copyTree(source, destination) {
   fs.mkdirSync(destination, { recursive: true });
@@ -37,6 +38,7 @@ function copyTree(source, destination) {
     const from = path.join(source, entry.name);
     const to = path.join(destination, entry.name);
     if (entry.isDirectory()) {
+      if (EXCLUDED_HOSTING_DIRECTORIES.has(path.relative(ROOT, from))) continue;
       count += copyTree(from, to);
     } else if (entry.isFile()) {
       fs.copyFileSync(from, to);
@@ -46,6 +48,7 @@ function copyTree(source, destination) {
   return count;
 }
 
+fs.rmSync(PUBLIC, { recursive: true, force: true });
 fs.mkdirSync(PUBLIC, { recursive: true });
 let copied = 0;
 for (const file of FILES) {
