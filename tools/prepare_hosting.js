@@ -29,7 +29,7 @@ const DIRECTORIES = [
   'shinies',
   'tipos'
 ];
-const EXCLUDED_HOSTING_DIRECTORIES = new Set([path.join('assets', 'cards')]);
+const EXCLUDED_HOSTING_DIRECTORIES = new Set();
 
 function copyTree(source, destination) {
   fs.mkdirSync(destination, { recursive: true });

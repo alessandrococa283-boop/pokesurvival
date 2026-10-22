@@ -1,4 +1,4 @@
-/* Colección clásica de Pokémon con ilustraciones del juego; no usa escaneos TCG. */
+/* Colección clásica de Pokémon con cartas ilustradas. */
 G.CardSystem = (() => {
   const CARD_DEXES = [
     63,65,59,15,9,1,10,113,6,4,5,35,87,50,84,148,147,96,51,125,101,83,92,58,130,
@@ -12,9 +12,9 @@ G.CardSystem = (() => {
       cost: { coins: 300, tickets: 3 },
       rewards: 1,
       variants: [
-        { id: 'bulbasaur', name: 'Bosque', dex: 1, color: '#38765a' },
-        { id: 'charmander', name: 'Llama', dex: 4, color: '#a95136' },
-        { id: 'squirtle', name: 'Océano', dex: 7, color: '#3478a2' }
+        { id: 'bulbasaur', name: 'Bosque', dex: 1, color: '#38765a', image: 'assets/cards/packs/venusaur.png' },
+        { id: 'charmander', name: 'Llama', dex: 4, color: '#a95136', image: 'assets/cards/packs/charizard.png' },
+        { id: 'squirtle', name: 'Océano', dex: 7, color: '#3478a2', image: 'assets/cards/packs/blastoise.png' }
       ]
     },
     rarityRates: G.Acquisition.gacha.rates.map(([rarity, weight]) => ({ rarity, weight })),
@@ -23,12 +23,17 @@ G.CardSystem = (() => {
     duplicateCoinsByRarity: G.Acquisition.gacha.duplicateRefund
   };
   const rarityNames = { 1: 'Común', 2: 'Poco común', 3: 'Rara', 4: 'Épica', 5: 'Legendaria' };
+  const CARD_IMAGES = {
+    abra:'abra-base-set-bs-43-325x447.jpg',alakazam:'alakazam-base-set-bs-1.jpg',arcanine:'arcanine-base-set-bs-23-325x447.jpg',beedrill:'beedrill-base-set-bs-17-325x447.jpg',blastoise:'blastoise-base-set-bs-2-325x447.jpg',bulbasaur:'bulbasaur-base-set-bs-44-325x447.jpg',caterpie:'caterpie-base-set-bs-45-325x447.jpg',chansey:'chansey-base-set-bs-3-325x447.jpg',charizard:'charizard-base-set-bs-4-325x447.jpg',charmander:'charmander-base-set-bs-46-325x447.jpg',charmeleon:'charmeleon-base-set-bs-24-325x447.jpg',clefairy:'clefairy-base-set-bs-5-325x447.jpg',dewgong:'dewgong-base-set-bs-25-325x447.jpg',diglett:'diglett-base-set-bs-47-325x447.jpg',doduo:'doduo-base-set-bs-48-325x447.jpg',dragonair:'dragonair-base-set-bs-18-325x447.jpg',dratini:'dratini-base-set-bs-26-325x447.jpg',drowzee:'drowzee-base-set-bs-49-325x447.jpg',dugtrio:'dugtrio-base-set-bs-19-325x447.jpg',electabuzz:'electabuzz-base-set-bs-20-325x447.jpg',electrode:'electrode-base-set-bs-21-325x447.jpg',farfetchd:'farfetchd-base-set-bs-27-325x447.jpg',gastly:'gastly-base-set-bs-50-325x447.jpg',growlithe:'growlithe-base-set-bs-28-325x447.jpg',gyarados:'gyarados-base-set-bs-6-325x447.jpg',haunter:'haunter-base-set-bs-29-325x447.jpg',hitmonchan:'hitmonchan-base-set-bs-7-325x447.jpg',ivysaur:'ivysaur-base-set-bs-30-325x447.jpg',jynx:'jynx-base-set-bs-31-325x447.jpg',kadabra:'kadabra-base-set-bs-32-325x447.jpg',kakuna:'kakuna-base-set-bs-33-325x447.jpg',koffing:'koffing-base-set-bs-51-325x447.jpg',machamp:'machamp-base-set-bs-8-325x447.jpg',machoke:'machoke-base-set-bs-34-325x447.jpg',machop:'machop-base-set-bs-52-325x447.jpg',magikarp:'magikarp-base-set-bs-35-325x447.jpg',magmar:'magmar-base-set-bs-36-325x447.jpg',magnemite:'magnemite-base-set-bs-53-325x447.jpg',magneton:'magneton-base-set-bs-9-325x447.jpg',metapod:'metapod-base-set-bs-54-325x447.jpg',mewtwo:'mewtwo-base-set-bs-10-325x447.jpg',nidoking:'nidoking-base-set-bs-11-325x447.jpg',nidoranmale:'nidoran-male-base-set-bs-55-325x447.jpg',nidorino:'nidorino-base-set-bs-37-325x447.jpg',ninetales:'ninetales-base-set-bs-12-325x447.jpg',onix:'onix-base-set-bs-56-325x447.jpg',pidgeotto:'pidgeotto-base-set-bs-22-325x447.jpg',pidgey:'pidgey-base-set-bs-57-325x447.jpg',pikachu:'pikachu-base-set-bs-58-325x447.jpg',poliwag:'poliwag-base-set-bs-59-325x447.jpg',poliwhirl:'poliwhirl-base-set-bs-38-325x447.jpg',poliwrath:'poliwrath-base-set-bs-13-325x447.jpg',ponyta:'ponyta-base-set-bs-60-325x447.jpg',porygon:'porygon-base-set-bs-39-325x447.jpg',raichu:'raichu-base-set-bs-14-325x447.jpg',raticate:'raticate-base-set-bs-40-325x447.jpg',rattata:'rattata-base-set-bs-61-325x447.jpg',sandshrew:'sandshrew-base-set-bs-62-325x447.jpg',seel:'seel-base-set-bs-41-325x447.jpg',squirtle:'squirtle-base-set-bs-63-325x447.jpg',starmie:'starmie-base-set-bs-64-325x447.jpg',staryu:'staryu-base-set-bs-65-325x447.jpg',tangela:'tangela-base-set-bs-66-325x447.jpg',venusaur:'venusaur-base-set-bs-15-325x447.jpg',voltorb:'voltorb-base-set-bs-67-325x447.jpg',vulpix:'vulpix-base-set-bs-68-325x447.jpg',wartortle:'wartortle-base-set-bs-42-325x447.jpg',weedle:'weedle-base-set-bs-69-325x447.jpg',zapdos:'zapdos-base-set-bs-16-325x447.jpg'
+  };
+  const normalizeName = name => String(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const catalog = CARD_DEXES.map(id => G.DEX_BY[id]).filter(Boolean).map(mon => ({
     id: mon.dex,
     name: mon.name,
     pokedex: mon.dex,
     rarity: mon.rarity,
     types: mon.types,
+    image: `assets/cards/base-set/${CARD_IMAGES[mon.dex === 32 ? 'nidoranmale' : normalizeName(mon.name)] || ''}`,
     fragmentsRequired: CONFIG.fragmentsRequiredByRarity[mon.rarity],
     enabled: !mon.leg,
     availableInPacks: !mon.leg,
@@ -222,13 +227,24 @@ G.CardCollectionUI = (() => {
     const wrap = document.createElement('span');
     wrap.className = 'card-art';
     wrap.style.setProperty('--fill', `${Math.max(0, Math.min(1, progress)) * 100}%`);
-    const silhouette = sprite(dex, width, height, { silhouette: true });
-    silhouette.className = 'card-art-base';
+    const card = G.CardSystem.catalog.find(item => item.id === dex);
+    if (!card || !card.image.endsWith('.jpg')) {
+      const fallback = sprite(dex, width, height);
+      fallback.className = 'card-art-fill';
+      fallback.setAttribute('aria-hidden', 'true');
+      wrap.appendChild(fallback);
+      return wrap;
+    }
+    const silhouette = document.createElement('img');
+    silhouette.src = card.image;
+    silhouette.alt = '';
+    silhouette.className = 'card-image card-image-base';
     silhouette.setAttribute('aria-hidden', 'true');
-    const color = sprite(dex, width, height);
-    color.className = 'card-art-fill';
-    color.setAttribute('aria-hidden', 'true');
-    wrap.append(silhouette, color);
+    const image = document.createElement('img');
+    image.src = card.image;
+    image.alt = card.name;
+    image.className = 'card-image card-image-fill';
+    wrap.append(silhouette, image);
     return wrap;
   }
 
@@ -259,7 +275,9 @@ G.CardCollectionUI = (() => {
       button.type = 'button';
       button.className = `pack-choice${pack.id === selected.id ? ' selected' : ''}`;
       button.setAttribute('aria-pressed', String(pack.id === selected.id));
-      const art = sprite(pack.dex, 86, 88, { hero: true });
+      const art = document.createElement('img');
+      art.src = pack.image;
+      art.alt = '';
       art.className = 'pack-choice-art';
       button.append(art, text('span', pack.name));
       button.onclick = () => { selectedPack = pack.id; renderPack(); };
@@ -269,7 +287,9 @@ G.CardCollectionUI = (() => {
 
     const panel = document.createElement('div');
     panel.className = 'panel card-pack';
-    const packArt = sprite(selected.dex, 140, 170, { hero: true });
+    const packArt = document.createElement('img');
+    packArt.src = selected.image;
+    packArt.alt = `Sobre con ilustración ${selected.name}`;
     packArt.className = 'pack-art';
     packArt.style.setProperty('--pack-color', selected.color);
     const details = document.createElement('div');

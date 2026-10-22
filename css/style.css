@@ -98,21 +98,24 @@ input { font: inherit; }
 .passive-entry .sub { margin-bottom: 4px; }
 .passive-box .note { margin: 4px 0 0; font-size: 11px; }
 
-/* ---------- colección de cartas con sprites del juego ---------- */
+/* ---------- colección de cartas ilustradas ---------- */
 .card-collection-app { width: min(1160px, 100%); max-height: 88vh; overflow: auto; }
 .cards-tabs, .card-filters { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; }
 .card-pack-picker { display: flex; justify-content: center; gap: 12px; margin: 14px 0; }
 .pack-choice { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 7px; border: 2px solid #ffffff30; border-radius: 9px; background: #101b35; color: inherit; cursor: pointer; }
 .pack-choice.selected { border-color: var(--gold); box-shadow: 0 0 12px #f2c94c70; }
-.pack-choice-art { width: 70px; height: 68px; }
+.pack-choice-art { width: 70px; height: 68px; object-fit: contain; }
 .card-pack, .card-reward { display: flex; align-items: center; gap: 18px; margin: 12px 0; }
-.pack-art { flex: 0 0 130px; width: 130px; height: 160px; border: 3px solid var(--pack-color, var(--gold)); border-radius: 12px; background: linear-gradient(145deg, var(--pack-color, #ffd23f), #101b35 68%); }
+.pack-art { flex: 0 0 130px; width: 130px; height: 160px; object-fit: contain; border: 3px solid var(--pack-color, var(--gold)); border-radius: 12px; background: linear-gradient(145deg, var(--pack-color, #ffd23f), #101b35 68%); }
 .card-pack-details { flex: 1; min-width: 0; }
 .card-rates { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 12px 0; color: var(--muted); }
 .card-grid { grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 10px; }
 .card-entry { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; padding: 8px; border: 1px solid #ffffff24; border-radius: 8px; background: #101b35; color: inherit; font: inherit; cursor: pointer; }
-.card-art { position: relative; display: block; overflow: hidden; width: 100%; aspect-ratio: 1 / 1; border: 1px solid #ffffff2c; border-radius: 8px; background: radial-gradient(ellipse at 50% 70%, #3d67c0, #101b35 70%); }
-.card-art canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.card-art { position: relative; display: block; overflow: hidden; width: 100%; aspect-ratio: 0.73; border: 1px solid #ffffff2c; border-radius: 8px; background: radial-gradient(ellipse at 50% 70%, #3d67c0, #101b35 70%); }
+.card-art canvas, .card-image { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.card-image { object-fit: contain; }
+.card-image-base { filter: grayscale(1) brightness(.28); opacity: .78; }
+.card-image-fill { clip-path: inset(calc(100% - var(--fill, 0%)) 0 0 0); transition: clip-path .45s ease; }
 .card-art-base { opacity: .62; }
 .card-art-fill { clip-path: inset(calc(100% - var(--fill, 0%)) 0 0 0); transition: clip-path .45s ease; }
 .card-entry progress, .card-detail-layout progress { width: 100%; accent-color: var(--gold); }
