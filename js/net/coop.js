@@ -283,6 +283,7 @@ G.Coop = (() => {
         case 'lp': picked(from); break;
         case 'hs': holdOn(from); break;
         case 'he': holdOff(from); break;
+        case 'ig': routeItemGift(from, ev[1], ev[2]); break;
         case 're': G.Rift.enterRequest(); break;
         case 'bye': mateGone(from); break;
       }
@@ -360,7 +361,14 @@ G.Coop = (() => {
                               friendly: false, color: '#ff7a9e', vis: G.VFX.forType(ev[8]), mtype: ev[8] });
         break;
       case 'c': { const m = mates.get(ev[1]); if (m) G.Combat.ghostCast(m.pl, ev[2], ev[3], ev[4], ev[5]); break; }
-      case 'item': api.item(ev[1]); break;
+      case 'item': if (isValidItem(ev[1])) api.item(ev[1], ev[2] || ''); break;
+      case 'is':
+        if (G.Items.BY[ev[1]]) G.UI.toast('Enviaste ' + G.Items.BY[ev[1]].name + ' a ' + ev[2], 2600);
+        break;
+      case 'if':
+        if (isValidItem(ev[1])) api.item(ev[1]);
+        G.UI.toast(ev[2] || 'No se pudo enviar el objeto.', 3200);
+        break;
       case 'pk': G.Pickups.addRemote(ev[1], ev[2], ev[3], ev[4], ev[5]); break;
       case 'pc': G.Pickups.removeId(ev[1]); break;
       case 'mag': G.Pickups.pullAll(); G.FX.ring(local.x, local.y, 10, 420, '#ff9ed8', 0.6, 4); break;
@@ -429,6 +437,45 @@ G.Coop = (() => {
     }
   }
 
+  function routeItemGift(from, to, id) {
+    const target = to === me ? null : mates.get(to);
+    if (!isValidItem(id) || from === to || (to !== me && (!target || !target.connected))) {
+      const message = 'No se pudo enviar el objeto. Comprueba que el compañero siga conectado.';
+      if (from === me) G.UI.toast(message, 3200);
+      else {
+        const sender = mates.get(from);
+        if (sender && sender.connected) sender.q.push(['if', id, message]);
+      }
+      return false;
+    }
+    const senderName = nameOf(from);
+    if (to === me) api.item(id, senderName);
+    else target.q.push(['item', id, senderName]);
+    const recipientName = nameOf(to);
+    if (from === me) G.Spawner.say('Enviaste ' + G.Items.BY[id].name + ' a ' + recipientName, 2.6, true);
+    else {
+      const sender = mates.get(from);
+      if (sender && sender.connected) sender.q.push(['is', id, recipientName]);
+    }
+    return true;
+  }
+
+  function giftItem(to, id) {
+    if (!active || !isValidItem(id) || to === me) return false;
+    const recipient = mates.get(to);
+    if (!recipient || !recipient.connected) return false;
+    if (host) return routeItemGift(me, to, id);
+    outEv.push(['ig', to, id]);
+    flushClient(true);
+    return true;
+  }
+
+  function isValidItem(id) {
+    return typeof id === 'string' && Object.prototype.hasOwnProperty.call(G.Items.BY, id);
+  }
+
+  function nameOf(u) { return u === me ? (G.Social.me ? G.Social.me.name : 'Tú') : (mates.get(u) || {}).name || '?'; }
+
   function shinyCaught(e) { emit(['sh', e.dex]); }
 
   // ---------------- subida de nivel compartida ----------------
@@ -442,8 +489,6 @@ G.Coop = (() => {
     api.levelStart(level);
     sendWaiting();
   }
-
-  function nameOf(u) { return u === me ? (G.Social.me ? G.Social.me.name : 'Tú') : (mates.get(u) || {}).name || '?'; }
 
   function sendWaiting() {
     const names = [...waiting].map(nameOf);
@@ -500,7 +545,7 @@ G.Coop = (() => {
   return {
     ANIMS, COLORS, begin, end, leave, tick, players, puppets, xpFactor, scaleRate, scaleHp,
     cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
-    propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
+    propBroken, collected, giftItem, nameOf, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */
     broadcast(ev) { emit(ev); },
     toHost(ev) { if (active && !host) { outEv.push(ev); flushClient(true); } },

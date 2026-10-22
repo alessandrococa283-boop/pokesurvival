@@ -88,6 +88,7 @@ G.Game = (() => {
   /** @param coop  { seed, host, members } para una partida en grupo */
   function startRun(coop = null, options = {}) {
     holdBy = []; awayBy = null;
+    openItem = null; laterItems.length = 0;
     const save = G.DB.save;
     storyMode = !!options.story || !!(coop && coop.story);
     storyVictory = false;
@@ -239,7 +240,7 @@ G.Game = (() => {
       endRun(!(d && d.why === 'host'));
     },
     lost(msg) { G.UI.toast(msg, 3600); endRun(false); },
-    item(id) { offerItem(id); },
+    item(id, from) { offerItem(id, from); },
     mateLeft() {},
     /** Grupo: quién está eligiendo fusión. Mientras haya alguien, todo parado. */
     hold(names) {
@@ -445,10 +446,7 @@ G.Game = (() => {
 
   /*
    * Cooperativo: la elección de objeto y las cartas de nivel no pueden taparse.
-   * Si llega un objeto con las cartas abiertas, espera a que elijas carta; y si
-   * las cartas llegan con la elección de objeto abierta, ésta vuelve a salir al
-   * terminar. (Antes una cerraba la otra, nadie podía terminar de elegir y la
-   * partida se quedaba parada para todos.)
+   * Los objetos se ponen en cola mientras otra elección está abierta.
    */
   let openItem = null;           // { cur, next, take } elección de objeto sin terminar
   const laterItems = [];         // objetos recogidos con las cartas de nivel abiertas
@@ -457,31 +455,55 @@ G.Game = (() => {
     if (openItem && !G.UI.isOpen('scr-item')) {
       const o = openItem;
       if (o.mine) { state = 'choice'; if (G.Coop.active) G.Coop.holdStart(); }
-      G.RunUI.showItemChoice(o.cur, o.next, o.take);
+      G.RunUI.showItemChoice(o.cur, o.next, o.take, giftRecipients(), o.gift, o.from);
       return;
     }
-    if (laterItems.length) offerItem(laterItems.shift());
+    if (laterItems.length) {
+      const item = laterItems.shift();
+      offerItem(item.id, item.from);
+    }
   }
 
   /** Has cogido un objeto: si no llevas ninguno te lo pones; si no, eliges. */
-  function offerItem(id) {
+  function offerItem(id, from = '') {
     if (!pl || !G.Items.BY[id]) return;
-    if (state === 'levelup' || G.UI.isOpen('scr-levelup')) { laterItems.push(id); return; }
+    if (state === 'levelup' || G.UI.isOpen('scr-levelup') || openItem || G.UI.isOpen('scr-item')) {
+      laterItems.push({ id, from });
+      return;
+    }
     let mine = false;            // esta elección es la que ha parado el juego
-    const take = got => {
-      openItem = null;
-      if (got !== pl.item) {
-        pl.equip(got);
-        G.Spawner.say('¡Llevas ' + G.Items.BY[got].name + '!', 2.6, true);
-        G.Progress.event('item', { id: got });
-      }
+    const finishChoice = () => {
       if (!mine) { afterLevelUp(); return; }
       if (state === 'choice') state = holdBy.length ? 'held' : 'playing';
       if (G.Coop.active) G.Coop.holdEnd();
       afterLevelUp();
     };
+    const take = got => {
+      openItem = null;
+      if (from) G.Spawner.say(from + ' te envió ' + G.Items.BY[id].name, 2.6, true);
+      if (got !== pl.item) {
+        pl.equip(got);
+        G.Spawner.say('¡Llevas ' + G.Items.BY[got].name + '!', 2.6, true);
+        G.Progress.event('item', { id: got });
+      }
+      finishChoice();
+    };
+    const gift = uid => {
+      openItem = null;
+      if (!G.Coop.giftItem(uid, id)) {
+        G.UI.toast('No se pudo enviar el objeto. Comprueba que el compañero siga conectado.', 3200);
+        openItem = { cur: pl.item, next: id, take, gift, from, get mine() { return mine; } };
+        G.RunUI.showItemChoice(pl.item, id, take, giftRecipients(), gift, from);
+        return;
+      }
+      finishChoice();
+    };
     if (!pl.item) { take(id); return; }
-    if (pl.item === id) { G.Spawner.say('Ya llevas ' + G.Items.BY[id].name, 2, true); return; }
+    const recipients = G.Coop.active ? giftRecipients() : [];
+    if (pl.item === id && !recipients.length) {
+      G.Spawner.say('Ya llevas ' + G.Items.BY[id].name, 2, true);
+      return;
+    }
     // Se para el juego mientras eliges; en grupo, para todos (como con las
     // fusiones). Antes en grupo seguía y te pegaban mientras elegías.
     if (state === 'playing' || state === 'held') {
@@ -489,8 +511,12 @@ G.Game = (() => {
       state = 'choice';
       if (G.Coop.active) G.Coop.holdStart();
     }
-    openItem = { cur: pl.item, next: id, take, get mine() { return mine; } };
-    G.RunUI.showItemChoice(pl.item, id, take);
+    openItem = { cur: pl.item, next: id, take, gift, from, get mine() { return mine; } };
+    G.RunUI.showItemChoice(pl.item, id, take, recipients, gift, from);
+  }
+
+  function giftRecipients() {
+    return G.Coop.mates.filter(m => m.connected).map(m => ({ uid: m.uid, name: m.name }));
   }
 
   /** @param who  quien lo ha cogido (en cooperativo puede ser un compañero) */
@@ -567,8 +593,10 @@ G.Game = (() => {
       return;
     }
     if (G.UI.isOpen('scr-item')) {
-      for (let i = 0; i < 2; i++) {
-        if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) document.querySelectorAll('#item-cards .card')[i].click();
+      const cards = document.querySelectorAll('#item-cards .card');
+      for (let i = 0; i < cards.length; i++) {
+        if (i >= 9) break;
+        if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) cards[i].click();
       }
       return;
     }

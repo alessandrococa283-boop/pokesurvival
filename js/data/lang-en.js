@@ -143,6 +143,12 @@ G.I18n.add({
   '+35% de velocidad.': '+35% speed.', 'Los que te golpean cuerpo a cuerpo reciben daño.': 'Foes that hit you in melee take damage.',
   '+20% de reducción de daño recibido.': '+20% damage reduction.',
   '¡Un objeto!': 'An item!', 'Sólo puedes llevar uno ·': 'You can only hold one ·', 'Quedarme con': 'Keep', 'Cambiar a': 'Switch to',
+  'Sólo puedes llevar uno · elige qué hacer con el objeto': 'You can only carry one · choose what to do with this item',
+  'Enviar a ': 'Send to ', 'enviar este objeto a un compañero': 'send this item to a teammate',
+  ' te ha enviado un objeto · elige qué hacer': ' sent you an item · choose what to do with it',
+  ' te envió ': ' sent you ',
+  'No se pudo enviar el objeto. Comprueba que el compañero siga conectado.': 'Could not send the item. Check that your teammate is still connected.',
+  'Enviaste ': 'You sent ', ' a ': ' to ',
   '¡Llevas {x}!': 'You\'re holding {x}!', 'Ya llevas {x}': 'You already hold {x}', '¡Banda Focus!': 'Focus Sash!',
 
   // ---------------- mejoras permanentes ----------------

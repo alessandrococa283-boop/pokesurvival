@@ -173,10 +173,14 @@ G.RunUI = (() => {
   }
 
   /** Has encontrado un objeto llevando ya otro: ¿con cuál te quedas? */
-  function showItemChoice(cur, next, cb) {
+  function showItemChoice(cur, next, cb, recipients = [], onGift = null, from = '') {
+    $('item-sub').textContent = from
+      ? from + ' te ha enviado un objeto · elige qué hacer'
+      : 'Sólo puedes llevar uno · elige qué hacer con el objeto';
     const box = $('item-cards');
     box.innerHTML = '';
-    [[cur, 'Quedarme con'], [next, 'Cambiar a']].forEach(([id, verb], i) => {
+    const choices = cur === next ? [[cur, 'Conservar']] : [[cur, 'Quedarme con'], [next, 'Cambiar a']];
+    choices.forEach(([id, verb], i) => {
       const it = G.Items.BY[id];
       const el = document.createElement('div');
       el.className = 'card' + (i === 1 ? ' evo' : '');
@@ -184,6 +188,18 @@ G.RunUI = (() => {
         <div class="txt"><div class="nm">${verb} ${it.name}</div><div class="ds">${it.desc}</div></div>
         <div class="key">${i + 1}</div>`;
       el.onclick = () => { G.UI.hide('scr-item'); cb(id); };
+      box.appendChild(el);
+    });
+    recipients.forEach((recipient, i) => {
+      const it = G.Items.BY[next];
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.innerHTML = `<div class="ico">${G.Icons.html(next, 36)}</div>
+        <div class="txt"><div class="nm"><span>Enviar a </span><span class="item-recipient"></span></div>
+        <div class="ds">${it.name} · enviar este objeto a un compañero</div></div>
+        <div class="key">${i + choices.length + 1}</div>`;
+      el.querySelector('.item-recipient').textContent = recipient.name;
+      el.onclick = () => { G.UI.hide('scr-item'); if (onGift) onGift(recipient.uid); };
       box.appendChild(el);
     });
     G.UI.show('scr-item');
