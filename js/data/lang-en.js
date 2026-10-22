@@ -608,5 +608,41 @@ G.I18n.add({
   // ---------------- reportar marcas del ranking ----------------
   'Reportar marca sospechosa': 'Report suspicious record', 'Ya la has reportado': 'You already reported it',
   'Ya has reportado esta marca': 'You already reported this record',
-  '¿Reportar la marca de {x} como trampa?': "Report {x}'s record as cheating?", 'Gracias: la revisaremos': 'Thanks: we will review it'
+  '¿Reportar la marca de {x} como trampa?': "Report {x}'s record as cheating?", 'Gracias: la revisaremos': 'Thanks: we will review it',
+
+  // ---------------- colección de cartas ----------------
+  'Cartas': 'Cards', 'Colección clásica': 'Classic collection', 'Colección de cartas': 'Card Collection',
+  'Sobre básico': 'Basic Pack', 'Colección': 'Collection',
+  'Sobre básico · colección clásica': 'Basic Pack · Classic Collection',
+  'Diseño {x} · Una carta · {x} monedas + {x} tickets': '{x} design · One card · {x} coins + {x} tickets',
+  'Saldo: {x} monedas · {x} tickets': 'Balance: {x} coins · {x} tickets',
+  'Bosque': 'Forest', 'Llama': 'Flame', 'Océano': 'Ocean',
+  'Común': 'Common', 'Poco común': 'Uncommon', 'Comunes': 'Common',
+  'Poco comunes': 'Uncommon', 'Raras': 'Rare', 'Épicas': 'Epic', 'Legendarias': 'Legendary',
+  'Todas': 'All', 'En progreso': 'In Progress', 'Completadas': 'Completed',
+  'Desbloqueados': 'Unlocked', 'Abriendo…': 'Opening…', 'Abrir sobre': 'Open Pack',
+  ' (respaldo)': ' (fallback)', 'Duplicado: +{x} monedas.': 'Duplicate: +{x} coins.',
+  '+{x} fragmentos · {x} → {x}/{x}.': '+{x} fragments · {x} → {x}/{x}.',
+  '¡Carta completada!': 'Card completed!', '¡Personaje desbloqueado!': 'Character unlocked!',
+  'Carta desconocida': 'Unknown card', 'Sin descubrir': 'Undiscovered',
+  'Fragmentos: {x}/{x}': 'Fragments: {x}/{x}',
+  'Pokémon disponible en selección.': 'Pokémon available for selection.',
+  'Aún no desbloqueado.': 'Not unlocked yet.',
+  'La carta se irá revelando al obtener fragmentos.': 'The card will be revealed as you collect fragments.',
+  'Pokémon disponible': 'Pokémon available',
+  'Necesitas 300 monedas y 3 tickets para abrir este sobre.': 'You need 300 coins and 3 tickets to open this pack.',
+  'No se encontró la carta obtenida.': 'The drawn card could not be found.',
+  'Inicia sesión para usar la colección de cartas.': 'Sign in to use the card collection.',
+  'La apertura ya está en curso.': 'A pack opening is already in progress.',
+  'Identificador de apertura inválido.': 'Invalid pack-opening identifier.',
+  'No hay cartas disponibles; el sobre no se cobró.': 'No cards are available; the pack was not charged.',
+  'Configuración inválida: probabilidades de rareza deben sumar 100 %.':
+    'Invalid configuration: rarity probabilities must add up to 100%.',
+  'Configuración inválida: fragmentos por rareza.': 'Invalid configuration: fragments per rarity.',
+  'Configuración inválida: requisitos por rareza.': 'Invalid configuration: rarity requirements.',
+  'Configuración inválida: coste o cantidad de recompensas del sobre.':
+    'Invalid configuration: pack cost or reward count.',
+  'Configuración inválida: compensación de duplicados.':
+    'Invalid configuration: duplicate compensation.',
+  'No hay personajes disponibles en la colección.': 'There are no Pokémon available in the collection.'
 });

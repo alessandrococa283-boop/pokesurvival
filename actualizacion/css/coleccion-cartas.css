@@ -1,0 +1,28 @@
+/* Colección de cartas Base Set */
+.card-collection-app { max-height: 88vh; overflow: auto; }
+.cards-tabs,.card-filters { display:flex; flex-wrap:wrap; gap:7px; margin:12px 0; }
+.card-pack-picker { display:flex; gap:12px; justify-content:center; margin:14px 0; }
+.pack-choice { display:flex; flex-direction:column; align-items:center; gap:5px; padding:7px; border:2px solid #ffffff30; border-radius:9px; background:#101b35; color:inherit; cursor:pointer; }
+.pack-choice.selected { border-color:#f2c94c; box-shadow:0 0 12px #f2c94c70; }
+.pack-choice img { width:72px; height:110px; object-fit:cover; border-radius:4px; }
+.card-pack,.card-reward { display:flex; gap:20px; align-items:center; padding:20px; margin:12px 0; }
+.pack-image { width:115px; max-height:190px; object-fit:contain; flex:none; border-radius:7px; }
+.card-rates { display:flex; flex-wrap:wrap; gap:8px 16px; margin:12px 0; color:var(--muted); }
+.card-reward img { width:110px; border-radius:8px; }
+.card-grid { grid-template-columns:repeat(auto-fill,minmax(125px,1fr)); gap:10px; }
+.card-entry { display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0; padding:8px; border:1px solid #ffffff24; border-radius:8px; background:#101b35; color:inherit; font:inherit; cursor:pointer; }
+.card-art { position:relative; display:block; overflow:hidden; width:100%; aspect-ratio:325/447; border-radius:5px; }
+.card-art img { position:absolute; inset:0; display:block; width:100%; height:100%; object-fit:cover; }
+.card-art-base { filter:brightness(.14) grayscale(1); }
+.card-art-fill { clip-path:inset(calc(100% - var(--fill,0%)) 0 0 0); transition:clip-path .45s ease; }
+.card-detail-overlay { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:18px; background:#050914d9; }
+.card-detail-overlay.hidden { display:none; }
+.card-detail-box { position:relative; width:min(720px,100%); max-height:90vh; overflow:auto; padding:24px; border:1px solid #ffffff35; border-radius:12px; background:#111d38; box-shadow:0 15px 60px #000b; }
+.card-detail-close { position:absolute; top:10px; right:10px; z-index:1; }
+.card-detail-layout { display:grid; grid-template-columns:minmax(160px,250px) 1fr; align-items:center; gap:25px; padding-top:24px; }
+.card-detail-art { width:100%; }
+.card-detail-layout progress { width:100%; accent-color:#f2c94c; }
+.card-entry progress { width:100%; accent-color:#f2c94c; }
+#card-message:empty { display:none; }
+@media(max-width:600px) { .card-pack,.card-reward { align-items:flex-start; gap:12px; padding:12px; } .pack-image { width:78px; max-height:130px; } .card-reward img { width:82px; } .pack-choice img { width:56px; height:84px; } .card-detail-layout { grid-template-columns:minmax(105px,38%) 1fr; gap:15px; } .card-detail-box { padding:14px; } }
+

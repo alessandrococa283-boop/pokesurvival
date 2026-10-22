@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-21', title: ['Colección clásica de cartas', 'Classic Card Collection'], new: [
+    ['Añadimos una colección de 69 Pokémon con ilustraciones de los sprites del juego. Abre sobres con monedas y tickets, reúne fragmentos para desbloquear personajes y recibe monedas por los duplicados. La colección se guarda y sincroniza con tu partida.',
+     'A 69-Pokémon collection featuring the game’s existing sprites is now available. Open packs with coins and tickets, collect fragments to unlock characters, and receive coins for duplicates. The collection is saved and synced with your game.']
+  ] },
   { d: '2026-10-21', title: ['Regalar objetos en cooperativo', 'Share Items in Co-op'], new: [
     ['En multijugador, cuando ya llevas un objeto puedes enviar el nuevo a cualquiera de tus compañeros conectados en lugar de reemplazar el tuyo o dejarlo pasar.',
      'In multiplayer, if you already carry an item, you can send a new one to any connected teammate instead of replacing yours or letting it go to waste.']

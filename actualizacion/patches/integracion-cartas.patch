@@ -1,0 +1,118 @@
+diff --git a/dev.html b/dev.html
+--- a/dev.html
++++ b/dev.html
+@@ -187,1 +187,2 @@
+         <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
++        <button class="menu-item" data-go="cards">Cartas<small>Colección y sobres</small></button>
+@@ -495,1 +495,9 @@
+-<!-- ====== Gacha ====== -->
++<section id="scr-cards" class="scr dim hidden">
++  <div class="box wide card-collection-app">
++    <div class="row between"><h2>Colección de cartas</h2><button class="btn small ghost" data-back>Volver</button></div>
++    <div class="row cards-tabs"><button class="btn small" data-card-view="pack">Sobre básico · Set clásico</button><button class="btn small ghost" data-card-view="collection">Colección</button></div>
++    <div id="card-pack-view"></div><div id="card-collection-view" class="hidden"></div><div id="card-message" role="status" aria-live="polite"></div>
++    <div id="card-detail" class="card-detail-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="card-detail-title"><div class="card-detail-box"><button class="btn small ghost card-detail-close" data-detail-close>Cerrar</button><div id="card-detail-content"></div></div></div>
++  </div>
++</section>
++<!-- ====== Gacha ====== -->
+@@ -705,1 +705,2 @@
+ <script defer src="js/core/updater.js"></script>
++<script defer src="js/cards/card-system.js"></script>
+ <!-- juego -->
+diff --git a/js/core/db.js b/js/core/db.js
+--- a/js/core/db.js
++++ b/js/core/db.js
+@@ -74,3 +74,4 @@
+       coins: START_COINS,
+       owned: {},              // dex -> { at, from: 'starter'|'gacha'|'wild' }
++      cardCollection: { v: 1, fragments: {}, discovered: {}, operations: {} },
+       shiny: {},              // dex -> { at, from } — variantes shiny conseguidas
+@@ -114,2 +115,5 @@
+     s.tickets = Object.assign({ t1: 0, t10: 0 }, s.tickets);
++    if (!isObj(s.cardCollection)) s.cardCollection = { v: 1, fragments: {}, discovered: {}, operations: {} };
++    s.cardCollection.v = 1;
++    for (const k of ['fragments', 'discovered', 'operations']) if (!isObj(s.cardCollection[k])) s.cardCollection[k] = {};
+     s.babyEggs = Array.isArray(s.babyEggs) ? s.babyEggs : [];
+@@ -154,4 +158,13 @@
+     if (G.DEX_BY) for (const coll of ['owned', 'shiny']) {
+       for (const d of Object.keys(s[coll] || {})) if (!G.DEX_BY[d]) delete s[coll][d];
+     }
++    if (!isObj(s.cardCollection)) s.cardCollection = { v: 1, fragments: {}, discovered: {}, operations: {} };
++    for (const k of ['fragments', 'discovered', 'operations']) if (!isObj(s.cardCollection[k])) s.cardCollection[k] = {};
++    for (const id of Object.keys(s.cardCollection.fragments)) {
++      const amount = Math.floor(Number(s.cardCollection.fragments[id]));
++      if (!G.DEX_BY?.[id] || !Number.isFinite(amount) || amount < 0) delete s.cardCollection.fragments[id];
++      else s.cardCollection.fragments[id] = amount;
++    }
++    for (const id of Object.keys(s.cardCollection.discovered)) if (!G.DEX_BY?.[id]) delete s.cardCollection.discovered[id];
++    for (const id of Object.keys(s.cardCollection.operations)) if (typeof id !== 'string') delete s.cardCollection.operations[id];
+     if (!isObj(s.gymMedals)) s.gymMedals = {};
+@@ -274,6 +287,16 @@
+     for (const coll of ['owned', 'shiny']) {
+       r[coll] = r[coll] || {};
+       for (const k in older[coll] || {}) {
+         if (!r[coll][k] || (older[coll][k].at || 0) < (r[coll][k].at || 0)) r[coll][k] = older[coll][k];
+       }
+     }
++    r.cardCollection = r.cardCollection || { v: 1, fragments: {}, discovered: {}, operations: {} };
++    for (const key of ['fragments', 'discovered']) {
++      r.cardCollection[key] = r.cardCollection[key] || {};
++      for (const dex of Object.keys(older.cardCollection?.[key] || {})) {
++        const old = older.cardCollection[key][dex], current = r.cardCollection[key][dex];
++        if (key === 'fragments') r.cardCollection[key][dex] = Math.max(Number(current) || 0, Number(old) || 0);
++        else if (!current) r.cardCollection[key][dex] = old;
++      }
++    }
++    r.cardCollection.operations = Object.assign({}, older.cardCollection?.operations || {}, r.cardCollection.operations || {});
+     r.babyOwned = r.babyOwned || {};
+diff --git a/js/game.js b/js/game.js
+--- a/js/game.js
++++ b/js/game.js
+@@ -940,1 +940,1 @@
+-    G.LoginUI.init(); G.TestUI.init(); G.MenuUI.init(); G.GachaUI.init();
++    G.LoginUI.init(); G.TestUI.init(); G.MenuUI.init(); G.GachaUI.init(); G.CardCollectionUI.init();
+diff --git a/js/main.js b/js/main.js
+--- a/js/main.js
++++ b/js/main.js
+@@ -5,1 +5,1 @@
+-                'MenuUI', 'RunUI', 'SettingsUI', 'Funding', 'SupportUI', 'Game', 'Flow'];
++                'MenuUI', 'RunUI', 'SettingsUI', 'Funding', 'SupportUI', 'CardCollectionUI', 'Game', 'Flow'];
+diff --git a/js/ui/menu.js b/js/ui/menu.js
+--- a/js/ui/menu.js
++++ b/js/ui/menu.js
+@@ -10,1 +10,1 @@
+-    const ICON = { play: 'ball', story: 'medal2', 'gym-medals': 'medal3', dex: 'book', upgrades: 'up', gacha: 'ball4', 'baby-gacha': 'ticket10', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
++    const ICON = { play: 'ball', story: 'medal2', 'gym-medals': 'medal3', dex: 'book', cards: 'book', upgrades: 'up', gacha: 'ball4', 'baby-gacha': 'ticket10', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
+@@ -16,2 +16,3 @@
+         else if (go === 'dex') openDex();
++        else if (go === 'cards') G.CardCollectionUI.open();
+        else if (go === 'upgrades') openUpgrades();
+diff --git a/js/ui/ui.js b/js/ui/ui.js
+--- a/js/ui/ui.js
++++ b/js/ui/ui.js
+@@ -10,1 +10,1 @@
+-                   'scr-story-select', 'scr-gym-medals', 'scr-start-move', 'scr-passive'];
++                   'scr-story-select', 'scr-gym-medals', 'scr-start-move', 'scr-passive', 'scr-cards'];
+diff --git a/js/data/changelog.js b/js/data/changelog.js
+--- a/js/data/changelog.js
++++ b/js/data/changelog.js
+@@ -9,1 +9,5 @@
+ G.CHANGELOG = [
++  { d: '2026-10-21', title: ['Colección de cartas y sobres', 'Card Collection and Packs'], new: [
++    ['Añadimos una colección del Set clásico: abre sobres con monedas y tickets, reúne fragmentos para desbloquear Pokémon y convierte cartas de personajes que ya tienes en monedas. La carta se revela a color conforme consigues fragmentos; cada rareza requiere 2–5 fragmentos y puedes elegir entre tres diseños de sobre.',
++     'A classic set collection is here: open packs with coins and tickets, collect shards to unlock Pokémon, and convert cards for characters you already own into coins. Cards reveal their colors as you collect shards; each rarity needs 2–5 shards, and you can choose from three pack designs.']
++  ] },
+diff --git a/tools/build.js b/tools/build.js
+--- a/tools/build.js
++++ b/tools/build.js
+@@ -27,1 +27,3 @@
+ const EXPOSE = process.argv.includes('--expose');
++// shell:true on Windows otherwise splits absolute paths when the project folder contains spaces.
++const cliPath = p => shell ? `"${p}"` : p;
+@@ -38,1 +40,1 @@
+-execFileSync(npx, ['--yes', 'terser@5', tmp, '--compress', 'passes=1', '--mangle', '--comments', 'false', '--ecma', '2020', '-o', outJs],
++execFileSync(npx, ['--yes', 'terser@5', cliPath(tmp), '--compress', 'passes=1', '--mangle', '--comments', 'false', '--ecma', '2020', '-o', cliPath(outJs)],
+@@ -45,1 +47,1 @@
+-  execFileSync(npx, ['--yes', 'javascript-obfuscator@4.1.1', outJs, '--output', outJs,
++  execFileSync(npx, ['--yes', 'javascript-obfuscator@4.1.1', cliPath(outJs), '--output', cliPath(outJs),
+

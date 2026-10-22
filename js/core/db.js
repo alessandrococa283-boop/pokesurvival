@@ -74,6 +74,7 @@ G.DB = (() => {
       updated: Date.now(),    // última modificación (para fusionar)
       coins: START_COINS,
       owned: {},              // dex -> { at, from: 'starter'|'gacha'|'wild' }
+      cardCollection: { v: 1, fragments: {}, discovered: {}, operations: {} },
       shiny: {},              // dex -> { at, from } — variantes shiny conseguidas
       partner: null,          // dex del Pokémon con el que juegas
       partnerShiny: false,    // jugar con su versión shiny (si la tienes)
@@ -114,6 +115,13 @@ G.DB = (() => {
       s.pupgDone = true;
     }
     s.tickets = Object.assign({ t1: 0, t10: 0 }, s.tickets);
+    if (!s.cardCollection || typeof s.cardCollection !== 'object' || Array.isArray(s.cardCollection))
+      s.cardCollection = { v: 1, fragments: {}, discovered: {}, operations: {} };
+    s.cardCollection.v = 1;
+    for (const k of ['fragments', 'discovered', 'operations']) {
+      if (!s.cardCollection[k] || typeof s.cardCollection[k] !== 'object' || Array.isArray(s.cardCollection[k]))
+        s.cardCollection[k] = {};
+    }
     s.babyEggs = Array.isArray(s.babyEggs) ? s.babyEggs : [];
     s.babyOwned = s.babyOwned || {};
     sanitize(s);
@@ -154,6 +162,30 @@ G.DB = (() => {
     if (G.DEX_BY) for (const coll of ['owned', 'shiny']) {
       for (const d of Object.keys(s[coll] || {})) if (!G.DEX_BY[d]) delete s[coll][d];
     }
+    if (!isObj(s.cardCollection)) s.cardCollection = { v: 1, fragments: {}, discovered: {}, operations: {} };
+    s.cardCollection.v = 1;
+    for (const key of ['fragments', 'discovered', 'operations']) {
+      if (!isObj(s.cardCollection[key])) s.cardCollection[key] = {};
+    }
+    for (const dex of Object.keys(s.cardCollection.fragments)) {
+      const amount = Number(s.cardCollection.fragments[dex]);
+      if (!G.DEX_BY || !G.DEX_BY[dex] || !Number.isFinite(amount) || amount < 0)
+        delete s.cardCollection.fragments[dex];
+      else s.cardCollection.fragments[dex] = Math.min(1000, Math.floor(amount));
+    }
+    for (const dex of Object.keys(s.cardCollection.discovered)) {
+      if (!G.DEX_BY || !G.DEX_BY[dex]) delete s.cardCollection.discovered[dex];
+      else s.cardCollection.discovered[dex] = !!s.cardCollection.discovered[dex];
+    }
+    const operationIds = Object.keys(s.cardCollection.operations);
+    for (const id of operationIds) {
+      const operation = s.cardCollection.operations[id];
+      if (!/^[a-zA-Z0-9_-]{1,128}$/.test(id) || !isObj(operation) || !G.DEX_BY || !G.DEX_BY[operation.cardId])
+        delete s.cardCollection.operations[id];
+    }
+    const validOperations = Object.keys(s.cardCollection.operations);
+    for (const id of validOperations.slice(0, Math.max(0, validOperations.length - 100)))
+      delete s.cardCollection.operations[id];
     if (!isObj(s.gymMedals)) s.gymMedals = {};
     if (G.GymLeaders) for (const id of Object.keys(s.gymMedals)) {
       const result = s.gymMedals[id];
@@ -274,6 +306,23 @@ G.DB = (() => {
         if (!r[coll][k] || (older[coll][k].at || 0) < (r[coll][k].at || 0)) r[coll][k] = older[coll][k];
       }
     }
+    const cardState = value => isObj(value) ? value : { fragments: {}, discovered: {}, operations: {} };
+    const currentCards = cardState(r.cardCollection);
+    const olderCards = cardState(older.cardCollection);
+    for (const key of ['fragments', 'discovered', 'operations']) {
+      if (!isObj(currentCards[key])) currentCards[key] = {};
+      if (!isObj(olderCards[key])) olderCards[key] = {};
+    }
+    for (const dex of Object.keys(olderCards.fragments))
+      currentCards.fragments[dex] = Math.max(Number(currentCards.fragments[dex]) || 0, Number(olderCards.fragments[dex]) || 0);
+    for (const dex of Object.keys(olderCards.discovered))
+      currentCards.discovered[dex] = !!currentCards.discovered[dex] || !!olderCards.discovered[dex];
+    currentCards.operations = Object.assign({}, olderCards.operations, currentCards.operations);
+    const mergedOperations = Object.keys(currentCards.operations);
+    for (const id of mergedOperations.slice(0, Math.max(0, mergedOperations.length - 100)))
+      delete currentCards.operations[id];
+    currentCards.v = 1;
+    r.cardCollection = currentCards;
     r.babyOwned = r.babyOwned || {};
     for (const dex in older.babyOwned || {}) {
       if (!r.babyOwned[dex] || (older.babyOwned[dex].at || 0) < (r.babyOwned[dex].at || 0))

@@ -182,6 +182,7 @@
         <button class="menu-item" data-go="story">Historia<small>Conquista los 8 gimnasios de Kanto</small></button>
         <button class="menu-item" data-go="gym-medals">Medallas<small id="menu-gym-medals-sub">Tu colección de Kanto</small></button>
         <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
+        <button class="menu-item" data-go="cards">Cartas<small>Colección clásica</small></button>
         <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
         <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
         <button class="menu-item" data-go="baby-gacha">Compañeros bebé<small>Incuba huevos y reúne Pokémon bebé</small></button>
@@ -484,6 +485,26 @@
   </div>
 </section>
 
+<!-- ====== Colección de cartas ====== -->
+<section id="scr-cards" class="scr dim hidden">
+  <div class="box wide card-collection-app">
+    <div class="row between"><h2>Colección de cartas</h2><button class="btn small ghost" data-back>Volver</button></div>
+    <div class="row cards-tabs">
+      <button class="btn small" data-card-view="pack" aria-pressed="true">Sobre básico</button>
+      <button class="btn small ghost" data-card-view="collection" aria-pressed="false">Colección</button>
+    </div>
+    <div id="card-pack-view"></div>
+    <div id="card-collection-view" class="hidden"></div>
+    <div id="card-message" role="status" aria-live="polite"></div>
+    <div id="card-detail" class="card-detail-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="card-detail-title">
+      <div class="card-detail-box">
+        <button class="btn small ghost card-detail-close" data-detail-close>Cerrar</button>
+        <div id="card-detail-content"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ====== Mejoras ====== -->
 <section id="scr-upgrades" class="scr dim hidden">
   <div class="box wide">
@@ -637,6 +658,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/app.min.js?v=77d1ff0e64"></script>
+<script defer src="js/app.min.js?v=e0e5869fa1"></script>
 </body>
 </html>
