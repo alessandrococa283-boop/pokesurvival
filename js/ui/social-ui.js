@@ -199,7 +199,7 @@
     }
 
     function storyDexAllowed(dex) {
-      return dex >= 1 && dex <= 151 && G.EvolutionData.isBase(dex);
+      return G.EvolutionData.isStoryStarter(dex);
     }
 
     function babyPreview(dex) {
@@ -377,7 +377,7 @@
       btn.textContent = 'Empezar partida (' + ms.length + '/' + G.Social.MAX_PLAYERS + ')';
       $('lobby-note').textContent = !room.isHost ? 'Cuando el anfitrión empiece, entraréis todos a la vez.'
         : ms.length < 2 ? 'Necesitas al menos un amigo en la sala.'
-        : storyInvalid ? 'Para Historia, cada jugador debe elegir una forma base de Kanto que tenga en su colección.'
+        : storyInvalid ? 'Para Historia, cada jugador debe elegir un Pokémon permitido de Kanto que tenga en su colección.'
         : failed ? 'No se puede conectar con algún amigo: su red (o la tuya) no deja jugar en grupo. Probad con otra wifi o datos móviles; se reintenta solo.'
         : connecting ? 'Conectando con tus amigos…' : 'La partida empieza para todos a la vez.';
     }
@@ -387,7 +387,7 @@
       if (!room || !room.isHost || room.members.length < 2) return;
       const story = room.mode === 'story';
       if (story && room.members.some(m => !storyDexAllowed(Number(m.dex)))) {
-        G.UI.toast('Para Historia, cada jugador debe elegir una forma base de Kanto que tenga en su colección.');
+        G.UI.toast('Para Historia, cada jugador debe elegir un Pokémon permitido de Kanto que tenga en su colección.');
         return;
       }
       const cfg = {

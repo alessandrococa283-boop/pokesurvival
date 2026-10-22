@@ -302,6 +302,11 @@ G.I18n.add({
 
   // ---------------- menú ----------------
   'Jugar': 'Play', 'Entra en la mazmorra': 'Enter the dungeon', 'Pokémon': 'Pokémon', 'Tu colección': 'Your collection',
+  'Empieza una nueva run': 'Start a new run', 'Empezar run': 'Start run', 'Continuar historia': 'Continue Story',
+  'Ver medallas': 'View medals', 'Ver Pokémon': 'View Pokémon', 'Ver cartas': 'View cards', 'Ver mejoras': 'View upgrades',
+  'Abrir gacha': 'Open Gacha', 'Ver compañeros': 'View companions', 'Ver misiones': 'View missions',
+  'Invitar amigos': 'Invite friends', 'Ver ranking': 'View leaderboard', 'Abrir ajustes': 'Open settings',
+  'Apoyar el juego': 'Support the game',
   'Donar': 'Donate', 'Ayuda a mantener el servidor': 'Help keep the server running', 'Apoya PokéSurvival': 'Support PokéSurvival',
   'PokéSurvival es completamente gratuito. Tu donación es voluntaria y ayuda a mantener el servidor.':
     'PokéSurvival is completely free. Your donation is voluntary and helps keep the server running.',

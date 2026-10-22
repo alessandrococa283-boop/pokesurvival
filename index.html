@@ -166,38 +166,47 @@
 
 <!-- ====== Menú principal ====== -->
 <section id="scr-menu" class="scr hidden">
-  <div class="menu-left">
-    <div class="logo">
-      <div class="t1">PokéSurvival</div>
-    </div>
-    <div class="partner-card">
-      <canvas id="menu-partner" class="stage" width="260" height="200"></canvas>
-      <div class="nm" id="menu-partner-name"></div>
-      <div class="lv" id="menu-partner-info"></div>
-      <div class="seg hidden" id="menu-shiny"><button data-v="0">Normal</button><button data-v="1"></button></div>
-    </div>
-  </div>
-  <div class="menu-right">
-    <div class="box">
-      <div class="menu-list">
-        <button class="menu-item play" data-go="play">Jugar<small>Entra en la mazmorra</small></button>
-        <button class="menu-item" data-go="story">Historia<small>Conquista los 8 gimnasios de Kanto</small></button>
-        <button class="menu-item" data-go="gym-medals">Medallas<small id="menu-gym-medals-sub">Tu colección de Kanto</small></button>
-        <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
-        <button class="menu-item" data-go="cards">Cartas<small>Colección clásica y Cute</small></button>
-        <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
-        <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
-        <button class="menu-item" data-go="baby-gacha">Compañeros bebé<small>Incuba huevos y reúne Pokémon bebé</small></button>
-        <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
-        <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, hasta 5</small></button>
-        <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
-        <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
-        <button class="menu-item" data-go="support">Donar<small>Ayuda a mantener el servidor</small></button>
+  <div class="menu-layout">
+    <aside class="menu-left">
+      <div class="logo menu-brand">
+        <span class="menu-ball" aria-hidden="true"></span>
+        <div class="t1">PokéSurvival</div>
       </div>
-    </div>
-    <div class="box" style="padding:14px 18px">
-      <div id="menu-stats" style="font-size:14px;color:var(--muted)"></div>
-    </div>
+      <nav class="menu-list" aria-label="Menú principal">
+        <button class="menu-item play" data-go="play"><span class="menu-item-copy">Jugar<small>Empieza una nueva run</small></span></button>
+        <button class="menu-item" data-go="story"><span class="menu-item-copy">Historia<small>Conquista los 8 gimnasios de Kanto</small></span></button>
+        <button class="menu-item" data-go="gym-medals"><span class="menu-item-copy">Medallas<small id="menu-gym-medals-sub">Tu colección de Kanto</small></span></button>
+        <button class="menu-item" data-go="dex"><span class="menu-item-copy">Pokémon<small id="menu-dex-count">Tu colección</small></span></button>
+        <button class="menu-item" data-go="cards"><span class="menu-item-copy">Cartas<small>Colección clásica y Cute</small></span></button>
+        <button class="menu-item" data-go="upgrades"><span class="menu-item-copy">Mejoras<small>Haz más fuerte cada run</small></span></button>
+        <button class="menu-item" data-go="gacha"><span class="menu-item-copy">Gacha<small>9 regiones · Pokémon y shinies</small></span></button>
+        <button class="menu-item" data-go="baby-gacha"><span class="menu-item-copy">Compañeros bebé<small>Incuba huevos y reúne Pokémon bebé</small></span></button>
+        <button class="menu-item" data-go="goals"><span class="menu-item-copy">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></span></button>
+        <button class="menu-item" data-go="friends"><span class="menu-item-copy">Amigos<small id="menu-friends-sub">Juega en grupo, hasta 5</small></span></button>
+        <button class="menu-item" data-go="rank"><span class="menu-item-copy">Ranking<small>Quién aguanta más</small></span></button>
+        <button class="menu-item" data-go="settings"><span class="menu-item-copy">Ajustes<small>Sonido, gráficos, controles y cuenta</small></span></button>
+        <button class="menu-item" data-go="support"><span class="menu-item-copy">Donar<small>Ayuda a mantener el servidor</small></span></button>
+      </nav>
+    </aside>
+    <main class="menu-right" id="menu-right">
+      <div class="menu-info">
+        <div class="menu-heading" id="menu-heading">
+          <h2 id="menu-info-title">Jugar</h2>
+          <p id="menu-info-sub">Empieza una nueva run</p>
+        </div>
+        <div class="menu-stats-grid" id="menu-stats" aria-label="Estadísticas de la partida"></div>
+        <button class="menu-cta" id="menu-cta" type="button" data-go="play">
+          <span id="menu-cta-label">Empezar run</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M14 6l6 6-6 6"/></svg>
+        </button>
+        <div class="partner-card">
+          <canvas id="menu-partner" class="stage" width="260" height="200"></canvas>
+          <div class="nm" id="menu-partner-name"></div>
+          <div class="lv" id="menu-partner-info"></div>
+          <div class="seg hidden" id="menu-shiny"><button data-v="0">Normal</button><button data-v="1"></button></div>
+        </div>
+      </div>
+    </main>
   </div>
 </section>
 
@@ -224,7 +233,7 @@
 <section id="scr-story-select" class="scr dim hidden">
   <div class="box wide">
     <div class="row between"><h2>Modo Historia · Elige tu Pokémon</h2><button class="btn small ghost" id="story-cancel">Volver</button></div>
-    <p class="sub">Solo puedes elegir Pokémon de Kanto (#001–151) que ya tengas.</p>
+    <p class="sub">Elige un Pokémon de Kanto que tengas: formas de primera etapa, legendarios, singulares o especies sin evolución.</p>
     <div class="grid" id="story-pokemon-grid"></div>
     <div class="row between" style="margin-top:14px">
       <span id="story-selection-note" class="sub grow">Elige un Pokémon para empezar.</span>
@@ -602,6 +611,11 @@
       <p id="passive-desc"></p>
     </div>
     <div class="passive-entry">
+      <small>PASIVAS HEREDADAS POR TIPO</small>
+      <h3 id="passive-type-title"></h3>
+      <p id="passive-type-desc"></p>
+    </div>
+    <div class="passive-entry">
       <small>HABILIDAD DEL COMPAÑERO BEBÉ</small>
       <h3 id="passive-baby-title"></h3>
       <p id="passive-baby-desc"></p>
@@ -662,6 +676,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/app.min.js?v=0156cb8b47"></script>
+<script defer src="js/app.min.js?v=6962ae8a10"></script>
 </body>
 </html>

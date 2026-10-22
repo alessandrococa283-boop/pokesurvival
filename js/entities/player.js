@@ -1,8 +1,11 @@
 /* ============ player.js — el Pokémon que controlas ============
- * (x, y) son los PIES. Cada Pokémon tiene un ataque automático y puede sumar
- * ataques al evolucionar. Cada disparo usa su animación de Mundo Misterioso.
+ * (x, y) son los PIES. Cada Pokémon puede aprender varios ataques que se
+ * ejecutan juntos. Cada disparo usa su animación de Mundo Misterioso.
  */
 const BABY_SPRITES = new Map();
+const PHYSICAL_ATTACK_TYPES = new Set([
+  'normal', 'fighting', 'flying', 'poison', 'ground', 'rock', 'bug', 'ghost', 'steel'
+]);
 
 G.Player = class Player {
   /**
@@ -24,23 +27,25 @@ G.Player = class Player {
     this.attackSpeedMul = 1;
     this.dmgReduce = perks.dmgReduce || 0;
     this.regenFlat = perks.regen || 0;
-    this.magnet = 78 * (perks.magnetMul || 1);
+    this.magnet = 78 * (perks.magnetMul || 1) *
+      G.PassiveData.effects(mon.dex).magnet * G.PassiveData.typeEffects(mon.types).magnet;
     this.xpMul = perks.xpMul || 1;
-    this.coinMul = perks.coinMul || 1;
+    this.coinMul = (perks.coinMul || 1) * G.PassiveData.effects(mon.dex).coins *
+      G.PassiveData.typeEffects(mon.types).coins;
 
     this.baseHpBonus = perks.hp || 0;
-    this.maxHp = mon.hp + this.baseHpBonus;
+    this.maxHp = (mon.hp + this.baseHpBonus) * G.PassiveData.effects(mon.dex).maxHp *
+      G.PassiveData.typeEffects(mon.types).maxHp;
     this.hp = this.maxHp;
     this.baseSpd = mon.spd;
     this.baseAtk = mon.atk;
 
-    this.moves = [];           // ataque automático del Pokémon
+    this.moves = [];           // ataques que se lanzan juntos
     this.slots = [];           // grupos de ataques para compatibilidad con el cooperativo
     this.active = 0;           // hueco activo
-    this.maxMoves = 1;         // un ataque automático por Pokémon
+    this.maxMoves = 1;         // un grupo de ataques simultáneos por Pokémon
     this.evolutionMoves = [];
-    this.pendingEvolutionMoves = 0;
-    this.averageEvolutionBonusGranted = false;
+    this.legendaryBoostGranted = false;
     const selectedBabyDex = babyDex === undefined ? G.DB && G.DB.save && G.DB.save.babyPartner : babyDex;
     this.babyDex = G.BabyMons.BY_DEX[selectedBabyDex] ? selectedBabyDex : null;
     this.babyPassive = G.BabyMons.passiveFor(this.babyDex);
@@ -91,6 +96,12 @@ G.Player = class Player {
     this.statsTaken = {};      // veces que se eligió cada mejora de nivel
     this.passiveRegenT = 0;
     this.passiveKills = 0;
+    this.passiveLethalT = 0;
+    this.passiveThresholdShield = false;
+    this.lowHpPassive = false;
+    this.typeShieldHp = this.maxHp * G.PassiveData.typeEffects(mon.types).shield;
+    this.typeShieldRegenT = 0;
+    this.typeAuraT = 0;
     this.babyBarrierT = 0;
     this.babyWaterHealT = 0;
     this.shieldHp = 0;
@@ -123,20 +134,54 @@ G.Player = class Player {
   cy() { return this.y; }
 
   // ---------------- stats efectivos ----------------
-  get atk() { return this.baseAtk * this.atkMul * (1 + this.buffs.atk.n * this.buffs.atk.amount); }
+  get atk() {
+    const dragonBonus = Math.min(15, Math.floor(this.passiveKills / 100)) * this.typePassive.damagePer100;
+    return this.baseAtk * this.atkMul * (1 + this.buffs.atk.n * this.buffs.atk.amount) *
+      this.passive.damage * (this.typePassive.damage + dragonBonus);
+  }
+  get passive() { return G.PassiveData.effects(this.dex); }
+  get typePassive() { return G.PassiveData.typeEffects(this.mon.types); }
+  get attackRate() { return this.passive.attackSpeed * this.passive.fireRate * this.typePassive.attackSpeed; }
+  get passiveCritChance() { return this.passive.critChance + this.typePassive.critChance; }
+  get passiveCritDamage() { return this.passive.critDamage + this.typePassive.critDamage; }
+  updatePassiveThresholds() {
+    const passive = this.passive;
+    const ratio = this.hp / this.maxHp;
+    if (passive.lowHpThreshold) {
+      if (!this.lowHpPassive && ratio < passive.lowHpThreshold) this.lowHpPassive = true;
+      else if (this.lowHpPassive && ratio > (passive.lowHpRecovery || passive.lowHpThreshold)) this.lowHpPassive = false;
+    }
+    if (passive.thresholdShield && ratio > passive.thresholdShield) this.passiveThresholdShield = false;
+  }
   get spd() {
     const s = this.baseSpd * this.spdMul * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (this.slowT > 0 ? 0.5 : 1);
     const w = G.Weather.speedFor(this.mon.types);
     const slow = this.inLiquid ? G.World.liquidEffect(this.mon.types).slow || 1 : 1;
-    return s * slow * w * (this.babyPassive ? this.babyPassive.speed || 1 : 1);
+    return s * slow * w * (this.babyPassive ? this.babyPassive.speed || 1 : 1) *
+      this.passive.moveSpeed * this.typePassive.moveSpeed;
   }
-  get reduction() { return Math.min(0.8, this.dmgReduce + this.buffs.def.n * this.buffs.def.amount); }
+  get reduction() {
+    const passiveReduction = this.passive.reductionThreshold
+      ? (this.hp / this.maxHp > this.passive.reductionThreshold ? this.passive.reduction : 0)
+      : this.passive.reduction;
+    return Math.min(0.8, this.dmgReduce + this.buffs.def.n * this.buffs.def.amount +
+      passiveReduction + this.typePassive.reduction);
+  }
   get regen() { return this.regenFlat + this.buffs.regen.n * this.buffs.regen.amount; }
 
   changeSpecies(mon, updateStats = true) {
     const oldMaxHp = this.maxHp;
+    const oldInnatePassive = G.PassiveData.effects(this.dex);
+    const oldPassiveCoins = oldInnatePassive.coins;
+    const oldTypePassive = this.typePassive;
     this.mon = mon;
     this.dex = mon.dex;
+    const nextTypePassive = this.typePassive;
+    const nextInnatePassive = G.PassiveData.effects(mon.dex);
+    this.coinMul *= G.PassiveData.effects(mon.dex).coins / oldPassiveCoins *
+      nextTypePassive.coins / oldTypePassive.coins;
+    this.magnet *= nextTypePassive.magnet / oldTypePassive.magnet *
+      nextInnatePassive.magnet / oldInnatePassive.magnet;
     this.r = G.Sprites.bodyRadius(mon.dex);
     this.bodyH = G.Sprites.bodyHeight(mon.dex);
     this.shiny = this.shiny && G.Sprites.hasShiny(mon.dex);
@@ -144,8 +189,9 @@ G.Player = class Player {
     this.baseSpd = mon.spd;
     this.baseAtk = mon.atk;
     if (updateStats) {
-      this.maxHp = mon.hp + this.baseHpBonus;
+      this.maxHp = (mon.hp + this.baseHpBonus) * G.PassiveData.effects(mon.dex).maxHp * nextTypePassive.maxHp;
       this.hp = Math.min(this.maxHp, this.hp + this.maxHp - oldMaxHp);
+      this.typeShieldHp = Math.min(this.typeShieldHp, this.maxHp * nextTypePassive.shield);
     }
     G.Sprites.preload([mon.dex], 8000, this.shiny);
   }
@@ -160,7 +206,6 @@ G.Player = class Player {
       G.Moves.availableFor(mon).some(move => move.id === current.id);
     this.changeSpecies(mon);
     this.evolutionCount++;
-    this.pendingEvolutionMoves++;
     if (!keepCurrent) {
       const primary = G.Moves.instance(G.Moves.attackFor(mon));
       this.moves = [primary, ...this.evolutionMoves];
@@ -180,21 +225,21 @@ G.Player = class Player {
     if (evolution && !this.evolveTo(evolution.to)) {
       throw new Error('No se pudo evolucionar al Pokémon ' + this.dex + ' al nivel ' + this.level);
     }
-    if (!this.averageEvolutionBonusGranted && this.level >= G.EvolutionData.AVERAGE_LEVEL) {
-      const nextLevel = G.EvolutionData.nextLevel(this.dex);
-      const noEvolution = !G.EvolutionData.hasEvolution(this.startDex);
-      if (noEvolution || (nextLevel != null && nextLevel > G.EvolutionData.AVERAGE_LEVEL)) {
-        this.pendingEvolutionMoves++;
-        this.averageEvolutionBonusGranted = true;
-      }
+    if (!this.legendaryBoostGranted && this.level >= 18 && this.mon.leg &&
+        !G.EvolutionData.hasEvolution(this.startDex)) {
+      this.atkMul *= 2;
+      this.spdMul *= 2;
+      this.maxHp *= 2;
+      this.hp = Math.min(this.maxHp, this.hp * 2);
+      this.legendaryBoostGranted = true;
+      G.FX.dmgText(this.x, this.y - this.bodyH - 8, '¡Poder legendario ×2!', '#ffd23f');
     }
-    const heal = this.dex === 2 ? 0.02 : this.dex === 3 ? 0.03 : 0;
-    if (heal) this.heal(this.maxHp * heal);
+    if (this.passive.levelHeal) this.heal(this.maxHp * this.passive.levelHeal);
   }
 
   onEnemyDefeated(enemy) {
     this.passiveKills++;
-    const passive = G.PassiveData.get(this.dex);
+    const passive = this.passive;
     if (passive && passive.shieldEvery && this.passiveKills % passive.shieldEvery === 0) {
       this.shieldHp = this.maxHp * passive.shieldRate;
       this.shieldT = 4;
@@ -215,8 +260,14 @@ G.Player = class Player {
   }
 
   // ---------------- movimientos ----------------
-  addEvolutionMove(id) {
-    if (this.hasMove(id) || !G.Moves.BY_ID[id]) return false;
+  canAddAttack() {
+    if (this.moves.length >= 4 || !this.moves.length) return false;
+    const unlockMove = this.moves[this.moves.length === 1 ? 0 : this.moves.length - 1];
+    return unlockMove.lvl >= (this.moves.length === 1 ? 7 : 5);
+  }
+
+  addAttackMove(id) {
+    if (!this.canAddAttack() || this.hasMove(id) || !G.Moves.BY_ID[id]) return false;
     const move = G.Moves.instance(id, 1);
     move.evolutionExtra = true;
     this.evolutionMoves.push(move);
@@ -348,7 +399,9 @@ G.Player = class Player {
     if (this.anim.busy() && this.anim.progress() < 0.65) return;
     const meta = G.Sprites.animMeta(this.dex, anim);
     const len = meta ? meta.d.reduce((a, b) => a + b, 0) / 60 : 0.4;
-    const cd = Math.max(0.12, m.cd * this.cdMul * this.attackSpeedMul);
+    const firePassive = m.type === 'fire' && this.lowHpPassive
+      ? 1 + this.passive.lowHpBonus : 1;
+    const cd = Math.max(0.12, m.cd * this.cdMul * this.attackSpeedMul / (this.attackRate * firePassive));
     this.anim.play(anim, { speed: Math.max(1, len / (cd * 0.9)) });
     this.attackFace = 0.35;
   }
@@ -360,6 +413,18 @@ G.Player = class Player {
    */
   hurt(amount, type = null, pure = false, sourceKind = null, source = null) {
     if (this.invuln > 0 || this.dead) return;
+    const typePassive = this.typePassive;
+    if (!pure && Math.random() < Math.min(0.95, this.passive.dodgeChance + typePassive.dodge)) {
+      this.typeShieldRegenT = 0;
+      G.FX.dmgText(this.x, this.y - this.bodyH - 4, 'Esquivado', '#9deaff');
+      return;
+    }
+    if (!pure && sourceKind === 'contact' && typePassive.ignorePhysical > 0 &&
+        Math.random() < typePassive.ignorePhysical) {
+      this.typeShieldRegenT = 0;
+      G.FX.dmgText(this.x, this.y - this.bodyH - 4, 'Inmune', '#c8b5ff');
+      return;
+    }
     let eff = null;
     if (type) {
       const k = G.Types.mult(type, this.mon.types);
@@ -372,8 +437,22 @@ G.Player = class Player {
     const baby = this.babyPassive || {};
     const sourceReduction = sourceKind === 'projectile' ? baby.projectileReduction || 0
       : sourceKind === 'contact' ? baby.contactReduction || 0 : 0;
+    const typeReduction = sourceKind === 'projectile' ? typePassive.projectileReduction : 0;
+    const physicalReduction = PHYSICAL_ATTACK_TYPES.has(type) || sourceKind === 'contact'
+      ? this.passive.physicalReduction : 0;
     let d = pure ? Math.max(1, amount) : Math.max(1, amount *
-      (1 - Math.min(0.8, this.reduction + (baby.damageReduction || 0) + sourceReduction)) * close);
+      (1 - Math.min(0.8, this.reduction + (baby.damageReduction || 0) + sourceReduction +
+        typeReduction + physicalReduction)) * close);
+    this.typeShieldRegenT = 0;
+    if (this.typeShieldHp > 0) {
+      const absorbed = Math.min(this.typeShieldHp, d);
+      this.typeShieldHp -= absorbed;
+      d -= absorbed;
+      if (d <= 0) {
+        G.FX.dmgText(this.x, this.y - this.bodyH - 4, 'Bloqueado', '#e9c7ff');
+        return;
+      }
+    }
     if (this.shieldT > 0 && this.shieldHp > 0) {
       const absorbed = Math.min(this.shieldHp, d);
       this.shieldHp -= absorbed;
@@ -385,6 +464,13 @@ G.Player = class Player {
       }
     }
     this.hp -= d;
+    this.updatePassiveThresholds();
+    const passive = this.passive;
+    if (passive.thresholdShield && this.hp / this.maxHp <= passive.thresholdShield && !this.passiveThresholdShield) {
+      this.passiveThresholdShield = true;
+      this.shieldHp = this.maxHp * passive.thresholdShieldRate;
+      this.shieldT = passive.thresholdShieldDuration || Infinity;
+    }
     this.babyBarrierT = 0;
     this.invuln = 0.45;
     this.flash = 0.14;
@@ -396,12 +482,32 @@ G.Player = class Player {
     if (source && reflected >= 1 && baby.reflectChance && Math.random() < baby.reflectChance) {
       source.hurt(reflected, '#9fd8ff', this.x - source.x, this.y - source.y);
     }
+    const passiveReflect = d * (passive.reflectRate || 0);
+    if (source && passiveReflect >= 1) {
+      source.hurt(passiveReflect, '#9fd8ff', this.x - source.x, this.y - source.y);
+    }
+    const poisonReflect = d * (passive.poisonReflectRate || 0);
+    if (source && poisonReflect >= 1) {
+      source.hurt(poisonReflect, '#d47cf0', this.x - source.x, this.y - source.y);
+    }
     // Banda Focus: aguanta el golpe con 1 de vida (una vez cada 60 s).
     if (this.hp <= 0 && this.hasItem('focussash') && performance.now() - this.sashT > 60000) {
       this.sashT = performance.now();
       this.hp = 1; this.invuln = 1.2;
       G.FX.dmgText(this.x, this.y - this.bodyH - 16, '¡Banda Focus!', '#ff9a3d', true);
       G.FX.ring(this.x, this.y, 6, 70, '#ff9a3d', 0.5, 4);
+    }
+    if (this.hp <= 0 && passive.lethalCooldown && this.passiveLethalT <= 0 &&
+        (passive.lethalHeal || passive.lethalShield)) {
+      this.passiveLethalT = passive.lethalCooldown;
+      this.hp = passive.lethalHeal ? this.maxHp * passive.lethalHeal : 1;
+      if (passive.lethalShield) {
+        this.hp = Math.max(1, this.hp);
+        this.shieldHp = this.maxHp * passive.lethalShield;
+        this.shieldT = passive.lethalShieldDuration || 2;
+      }
+      this.invuln = Math.max(this.invuln, 1);
+      G.FX.ring(this.x, this.y, this.r, this.r * 3.2, '#82e8ff', 0.6, 4);
     }
     if (this.hp <= 0) {
       this.hp = 0; this.dead = true;
@@ -415,24 +521,28 @@ G.Player = class Player {
     const before = this.hp;
     amount *= this.healingMultiplier(source);
     this.hp = Math.min(this.maxHp, this.hp + amount);
+    this.updatePassiveThresholds();
     const got = Math.round(this.hp - before);
     if (got >= 1) G.FX.dmgText(this.x, this.y - this.bodyH - 6, '+' + got, '#5fe08a');
   }
 
   healingMultiplier(source = 'general') {
     const baby = this.babyPassive || {};
-    return 1 + (baby.healing || 0) + (source === 'pickup' ? baby.itemHealing || 0 : 0);
+    return this.typePassive.healing + (baby.healing || 0) +
+      (source === 'pickup' ? baby.itemHealing || 0 : 0);
   }
 
   addMaxHp(amount) {
     this.maxHp += amount;
     this.hp += amount;
+    if (this.typeShieldHp > 0) this.typeShieldHp += amount * this.typePassive.shield;
     if (this.shieldT > 0) this.shieldHp = Math.min(this.shieldHp, this.maxHp * G.AbilityData.SHIELD.capacity);
   }
 
   /** Devuelve cuántos niveles ha subido (pueden ser varios de golpe). */
   gainXp(amount) {
-    this.xp += amount * this.xpMul * (this.babyPassive ? this.babyPassive.experience || 1 : 1) *
+    this.xp += amount * this.xpMul * this.passive.experience * this.typePassive.experience *
+      (this.babyPassive ? this.babyPassive.experience || 1 : 1) *
       G.AbilityData.xpMultiplier(G.Game.st.time);
     let leveled = 0;
     while (this.xp >= this.xpNext) {
@@ -456,9 +566,19 @@ G.Player = class Player {
   }
 
   /** Cascabel Concha: un poco de vida por el daño que haces (tope 4/s). */
-  onDealt(dmg, kind = null) {
+  onDealt(dmg, kind = null, critical = false, enemy = null) {
     if (this.item === 'shellbell') this.bellHeal = Math.min(4, this.bellHeal + dmg * 0.04);
     if (kind === 'melee' && this.lifeStealRate > 0) this.heal(dmg * this.lifeStealRate);
+    const passive = this.passive;
+    if (passive.onHitHeal && Math.random() < passive.onHitHealChance)
+      this.heal(this.maxHp * passive.onHitHeal);
+    if (passive.lifeStealRate && Math.random() < passive.lifeStealChance)
+      this.heal(dmg * passive.lifeStealRate);
+    if (critical && passive.critLifeSteal) this.heal(dmg * passive.critLifeSteal);
+    if (this.typePassive.lifeSteal) this.heal(dmg * this.typePassive.lifeSteal);
+    if (enemy && passive.statusHitHeal &&
+        (enemy.stunT > 0 || enemy.charmedT > 0 || enemy.slowT > 0))
+      this.heal(this.maxHp * passive.statusHitHeal);
   }
 
   /** Poder de un altar (ver systems/interact.js): se aplica y se quita solo. */
@@ -483,12 +603,14 @@ G.Player = class Player {
     if (this.invuln > 0) this.invuln -= dt;
     if (this.flash > 0) this.flash -= dt;
     if (this.attackFace > 0) this.attackFace -= dt;
+    this.updatePassiveThresholds();
 
     for (const k in this.buffs) {
       const b = this.buffs[k];
       if (b.n > 0) { b.t -= dt; if (b.t <= 0) b.n = 0; }
     }
     if (this.slowT > 0) this.slowT -= dt;
+    if (this.passiveLethalT > 0) this.passiveLethalT -= dt;
     if (this.babyWaterHealT > 0) this.babyWaterHealT -= dt;
     if (this.bellHeal > 0) {
       const h = Math.min(this.bellHeal, 4 * dt);
@@ -508,12 +630,21 @@ G.Player = class Player {
         G.FX.ring(this.x, this.y, this.r, this.r * 2.8, '#9fd8ff', 0.45, 3);
       }
     }
+    const typePassive = this.typePassive;
+    if (typePassive.shield && this.typeShieldHp < this.maxHp * typePassive.shield) {
+      this.typeShieldRegenT += dt;
+      if (this.typeShieldRegenT >= 8) {
+        this.typeShieldHp = this.maxHp * typePassive.shield;
+        this.typeShieldRegenT = 0;
+        G.FX.ring(this.x, this.y, this.r, this.r * 2.8, '#e9c7ff', 0.45, 3);
+      }
+    }
     G.ActiveAbilities.update(this, dt);
-    const passive = G.PassiveData.get(this.dex);
+    const passive = this.passive;
     if (passive && passive.regen) {
       this.passiveRegenT += dt;
-      while (this.passiveRegenT >= passive.interval) {
-        this.passiveRegenT -= passive.interval;
+      while (this.passiveRegenT >= passive.regenInterval) {
+        this.passiveRegenT -= passive.regenInterval;
         this.heal(this.maxHp * passive.regen);
       }
     }
@@ -530,7 +661,15 @@ G.Player = class Player {
     this.svy = slide ? G.U.damp(this.svy || 0, ay * s * 1.15, 1.6, dt) : ay * s;
     this.x += this.svx * dt;
     this.y += this.svy * dt;
-    G.World.collide(this);
+    if (!typePassive.phase) G.World.collide(this);
+    if (typePassive.enemySlowAura) {
+      this.typeAuraT -= dt;
+      if (this.typeAuraT <= 0) {
+        this.typeAuraT = 0.5;
+        for (const enemy of G.EnemyMgr.queryCircle(this.x, this.y, 100))
+          enemy.applySlow(1 - typePassive.enemySlowAura, 0.8);
+      }
+    }
     if (this.walking) this.moveAngle = Math.atan2(ay, ax);
 
     // --- terreno líquido ---
@@ -655,6 +794,13 @@ G.Player = class Player {
       ctx.globalAlpha = 0.45 + Math.sin(performance.now() / 100) * 0.2;
       ctx.strokeStyle = '#82e8ff'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 2.2, this.r * 0.9, 0, 0, 6.2832); ctx.stroke();
+      ctx.restore();
+    }
+    if (this.typeShieldHp > 0 && !this.dead) {
+      ctx.save();
+      ctx.globalAlpha = 0.35 + Math.sin(performance.now() / 120) * 0.15;
+      ctx.strokeStyle = '#e9c7ff'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 2.45, this.r, 0, 0, 6.2832); ctx.stroke();
       ctx.restore();
     }
 

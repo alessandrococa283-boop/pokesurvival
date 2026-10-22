@@ -8,47 +8,76 @@ G.EvolutionData = (() => {
     65: 64, 67: 66, 68: 67, 70: 69, 71: 70, 73: 72, 75: 74, 76: 75, 78: 77,
     80: 79, 82: 81, 85: 84, 87: 86, 89: 88, 91: 90, 93: 92, 94: 93, 97: 96,
     99: 98, 101: 100, 103: 102, 105: 104, 110: 109, 112: 111, 117: 116, 119: 118,
-    121: 120, 130: 129, 134: 133, 135: 133, 136: 133, 148: 147, 149: 148
+    121: 120, 130: 129, 134: 133, 135: 133, 136: 133, 139: 138, 141: 140,
+    148: 147, 149: 148
   };
-  const LEVEL = {
-    1: [2, 16], 2: [3, 32], 4: [5, 16], 5: [6, 36], 7: [8, 16], 8: [9, 36],
-    10: [11, 7], 11: [12, 10], 13: [14, 7], 14: [15, 10], 16: [17, 18],
-    17: [18, 36], 19: [20, 20], 21: [22, 20], 23: [24, 22], 27: [28, 22],
-    29: [30, 16], 32: [33, 16], 41: [42, 22], 43: [44, 21],
-    46: [47, 24], 48: [49, 31], 50: [51, 26], 52: [53, 28], 54: [55, 33],
-    56: [57, 28], 60: [61, 25], 63: [64, 16], 66: [67, 28],
-    69: [70, 21], 72: [73, 30], 74: [75, 25], 77: [78, 40], 79: [80, 37],
-    81: [82, 30], 84: [85, 31], 86: [87, 34], 88: [89, 38],
-    92: [93, 25], 96: [97, 26], 98: [99, 28], 100: [101, 30],
-    104: [105, 28], 109: [110, 35], 111: [112, 42], 116: [117, 32],
-    118: [119, 33], 129: [130, 20], 138: [139, 40], 140: [141, 40],
-    147: [148, 30], 148: [149, 55]
-  };
-  const AVERAGE_LEVEL = Math.round(
-    Object.values(LEVEL).reduce((sum, entry) => sum + entry[1], 0) / Object.keys(LEVEL).length
-  );
+  const STORY_STARTERS = new Set([
+    1, 4, 7, 10, 13, 16, 19, 21, 23, 25, 27, 29, 32, 35, 37, 39, 41, 43,
+    46, 48, 50, 52, 54, 56, 58, 60, 63, 66, 69, 72, 74, 77, 79, 81, 83, 84,
+    86, 88, 90, 92, 95, 96, 98, 100, 102, 104, 106, 107, 108, 109, 111,
+    113, 114, 115, 116, 118, 120, 122, 123, 124, 125, 126, 127, 128, 129,
+    131, 132, 133, 137, 138, 140, 142, 144, 145, 146, 147, 150, 151
+  ]);
+  const LEVEL_TO = {};
+  const CHILDREN = {};
+  // If a species branches, its first child in Pokédex order evolves automatically.
+  for (const child of Object.keys(PARENTS).map(Number)) {
+    const parent = PARENTS[child];
+    (CHILDREN[parent] = CHILDREN[parent] || []).push(child);
+    if (!LEVEL_TO[parent]) LEVEL_TO[parent] = child;
+  }
+
+  function rootOf(dex) {
+    let root = dex;
+    while (PARENTS[root]) root = PARENTS[root];
+    return root;
+  }
+
+  function depthFromRoot(dex) {
+    let depth = 0;
+    while (PARENTS[dex]) { dex = PARENTS[dex]; depth++; }
+    return depth;
+  }
+
+  function maxDepth(dex) {
+    const children = CHILDREN[dex] || [];
+    return children.length ? 1 + Math.max(...children.map(maxDepth)) : 0;
+  }
+
+  function evolutionLevel(dex) {
+    const root = rootOf(dex);
+    const phases = maxDepth(root);
+    return phases >= 2 ? (depthFromRoot(dex) === 0 ? 15 : 30) : 20;
+  }
 
   function isBase(dex) {
-    return dex >= 1 && dex <= 151 && !Object.prototype.hasOwnProperty.call(PARENTS, dex);
+    return Number.isInteger(dex) && dex >= 1 && dex <= 151 &&
+      !Object.prototype.hasOwnProperty.call(PARENTS, dex);
+  }
+
+  function isStoryStarter(dex) {
+    const number = Number(dex);
+    return Number.isInteger(number) && STORY_STARTERS.has(number);
   }
 
   function next(dex, level) {
-    const entry = LEVEL[dex];
-    return entry && level >= entry[1] ? { from: dex, to: entry[0], level: entry[1] } : null;
+    const to = LEVEL_TO[dex];
+    const required = to ? evolutionLevel(dex) : null;
+    return to && level >= required ? { from: dex, to, level: required } : null;
   }
 
   function hasEvolution(dex) {
     let current = dex;
-    while (LEVEL[current]) {
-      current = LEVEL[current][0];
+    while (LEVEL_TO[current]) {
+      current = LEVEL_TO[current];
       if (current === dex) return false;
     }
     return current !== dex;
   }
 
   function nextLevel(dex) {
-    return LEVEL[dex] ? LEVEL[dex][1] : null;
+    return LEVEL_TO[dex] ? evolutionLevel(dex) : null;
   }
 
-  return { isBase, next, hasEvolution, nextLevel, AVERAGE_LEVEL };
+  return { isBase, isStoryStarter, next, hasEvolution, nextLevel };
 })();

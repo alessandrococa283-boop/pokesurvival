@@ -189,7 +189,7 @@
         <button class="menu-item" data-go="support"><span class="menu-item-copy">Donar<small>Ayuda a mantener el servidor</small></span></button>
       </nav>
     </aside>
-    <main class="menu-right">
+    <main class="menu-right" id="menu-right">
       <div class="menu-info">
         <div class="menu-heading" id="menu-heading">
           <h2 id="menu-info-title">Jugar</h2>
@@ -234,7 +234,7 @@
 <section id="scr-story-select" class="scr dim hidden">
   <div class="box wide">
     <div class="row between"><h2>Modo Historia · Elige tu Pokémon</h2><button class="btn small ghost" id="story-cancel">Volver</button></div>
-    <p class="sub">Solo puedes elegir Pokémon de Kanto (#001–151) que ya tengas.</p>
+    <p class="sub">Elige un Pokémon de Kanto que tengas: formas de primera etapa, legendarios, singulares o especies sin evolución.</p>
     <div class="grid" id="story-pokemon-grid"></div>
     <div class="row between" style="margin-top:14px">
       <span id="story-selection-note" class="sub grow">Elige un Pokémon para empezar.</span>
@@ -610,6 +610,11 @@
       <h3 id="passive-title"></h3>
       <p class="sub" id="passive-level"></p>
       <p id="passive-desc"></p>
+    </div>
+    <div class="passive-entry">
+      <small>PASIVAS HEREDADAS POR TIPO</small>
+      <h3 id="passive-type-title"></h3>
+      <p id="passive-type-desc"></p>
     </div>
     <div class="passive-entry">
       <small>HABILIDAD DEL COMPAÑERO BEBÉ</small>

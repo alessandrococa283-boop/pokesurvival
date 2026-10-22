@@ -57,6 +57,8 @@ input { font: inherit; }
   animation: fade .2s ease-out;
 }
 .scr.hidden { display: none; }
+/* Las pantallas de interacción quedan delante de la barra para que no tape sus controles. */
+.scr:not(#scr-menu) { z-index: 30; }
 /* Pantallas que se abren con la barra superior a la vista: empiezan debajo de ella. */
 @media (min-height: 521px) {
   #scr-goals, #scr-dex, #scr-upgrades, #scr-gacha, #scr-friends, #scr-rank, #scr-lobby, #scr-profile { padding-top: 66px; }
@@ -1109,11 +1111,12 @@ button, input, select, textarea { font-family: var(--font); }
   transform: translate(-50%, -50%);
 }
 #scr-menu .menu-brand .t1 {
+  color: #252a30;
   font-size: clamp(30px, 4vw, 54px);
   font-weight: 900;
   line-height: 1;
   letter-spacing: -.02em;
-  text-shadow: 0 3px 0 rgba(255,255,255,.7);
+  text-shadow: 0 2px 0 #fff, 0 0 8px rgba(255,255,255,.9);
 }
 #scr-menu .menu-list {
   display: flex;
@@ -1129,7 +1132,9 @@ button, input, select, textarea { font-family: var(--font); }
 }
 #scr-menu .menu-item {
   display: grid;
-  min-height: 48px;
+  width: 96%;
+  min-height: 46px;
+  justify-self: center;
   flex: 0 0 auto;
   grid-template-columns: clamp(36px, 5vh, 48px) minmax(0, 1fr);
   align-items: center;
@@ -1140,7 +1145,7 @@ button, input, select, textarea { font-family: var(--font); }
   background: rgba(255,255,255,.95);
   box-shadow: 0 4px 0 rgba(22,30,50,.14), 0 10px 18px rgba(22,30,50,.12);
   color: #252a30;
-  font-size: clamp(16px, 2.1vh, 22px);
+  font-size: clamp(17px, 2.1vh, 22px);
   text-align: left;
   transition: background-color .2s ease, color .2s ease, transform .25s ease, box-shadow .2s ease;
 }
@@ -1163,7 +1168,7 @@ button, input, select, textarea { font-family: var(--font); }
   overflow: hidden;
   grid-column: auto;
   color: #59616b;
-  font-size: clamp(11px, 1.45vh, 14px);
+  font-size: clamp(13px, 1.7vh, 15px);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1204,7 +1209,7 @@ button, input, select, textarea { font-family: var(--font); }
   position: absolute;
   inset: 0;
   background: rgba(255,255,255,.9);
-  clip-path: polygon(64px 0, 100% 0, 100% 100%, 0 100%);
+  clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%);
   content: "";
   pointer-events: none;
   backdrop-filter: blur(12px) saturate(1.08);
@@ -1227,7 +1232,7 @@ button, input, select, textarea { font-family: var(--font); }
 }
 #scr-menu .menu-heading p {
   margin: 8px 0 0;
-  color: #4b5066;
+  color: #3f4654;
   font-size: clamp(16px, 2.5vh, 26px);
   font-weight: 700;
   text-wrap: balance;
@@ -1249,8 +1254,8 @@ button, input, select, textarea { font-family: var(--font); }
 #scr-menu .menu-stat span {
   display: block;
   overflow: hidden;
-  color: #59616b;
-  font-size: clamp(10px, 1.35vh, 13px);
+  color: #4b535d;
+  font-size: clamp(12px, 1.45vh, 14px);
   font-weight: 800;
   letter-spacing: .1em;
   text-overflow: ellipsis;
@@ -1325,6 +1330,15 @@ button, input, select, textarea { font-family: var(--font); }
 }
 #scr-menu .partner-card .lv { align-self: start; color: #59616b; text-shadow: none; }
 #scr-menu .partner-card .seg { grid-column: 2; margin: 5px 0; }
+#scr-menu .menu-list,
+#scr-menu .menu-right,
+.menu-layout {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+#scr-menu .menu-list::-webkit-scrollbar,
+#scr-menu .menu-right::-webkit-scrollbar,
+.menu-layout::-webkit-scrollbar { display: none; }
 #topbar:not(.hidden) {
   right: max(16px, env(safe-area-inset-right, 0px));
   left: 44%;
@@ -1332,16 +1346,42 @@ button, input, select, textarea { font-family: var(--font); }
   max-width: 56%;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 0;
   padding-top: max(12px, env(safe-area-inset-top, 0px));
 }
 #topbar > .btn { order: 1; }
 #topbar > .pill { order: 2; padding: 5px 11px; }
 #topbar > .btn,
 #topbar > .pill { flex: 0 0 auto; }
-#topbar .topbar-donate { text-decoration: none; }
-#topbar .btn.ghost { color: #252a30; text-shadow: none; }
-#topbar .btn.ghost:hover { color: #fff; }
+#topbar .topbar-donate {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+}
+#topbar .topbar-donate img { width: 18px; height: 18px; object-fit: contain; }
+#topbar .btn.ghost {
+  border-color: #fff;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 3px 0 rgba(22,30,50,.18);
+  color: #252a30;
+  text-shadow: none;
+}
+#topbar .btn.ghost:hover { background: #252a30; color: #fff; }
+#topbar .pill {
+  border-color: #fff;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 3px 0 rgba(22,30,50,.18);
+  color: #252a30;
+  text-shadow: none;
+}
+#credits-line:not(.hidden) {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(37,42,48,.94);
+  color: #fff;
+  text-shadow: none;
+}
 
 @media (max-width: 900px) {
   .menu-layout { display: block; overflow-y: auto; }
@@ -1356,8 +1396,8 @@ button, input, select, textarea { font-family: var(--font); }
     overflow: visible;
     padding: 2px 4px 4px;
   }
-  #scr-menu .menu-item { min-height: 56px; font-size: 16px; }
-  #scr-menu .menu-item small { font-size: 11px; }
+  #scr-menu .menu-item { min-height: 56px; font-size: 17px; }
+  #scr-menu .menu-item small { font-size: 13px; }
   #scr-menu .menu-right {
     min-height: 0;
     padding: 20px 16px 28px;
@@ -1370,7 +1410,7 @@ button, input, select, textarea { font-family: var(--font); }
     left: max(12px, env(safe-area-inset-left, 0px));
     max-width: none;
     justify-content: center;
-    gap: 6px;
+    gap: 0;
   }
 }
 @media (max-width: 520px) {
@@ -1380,7 +1420,7 @@ button, input, select, textarea { font-family: var(--font); }
   #scr-menu .menu-right { padding-top: 14px; }
   #scr-menu .menu-heading h2 { font-size: clamp(38px, 12vw, 56px); }
   #scr-menu .menu-stat b { font-size: clamp(22px, 7vw, 34px); }
-  #topbar:not(.hidden) { gap: 4px; }
+  #topbar:not(.hidden) { gap: 0; }
   #topbar > .pill { padding: 4px 8px; font-size: 13px; }
   #topbar > .btn { min-width: 34px; padding: 4px 8px; font-size: 12px; }
 }
@@ -1388,10 +1428,11 @@ button, input, select, textarea { font-family: var(--font); }
   #scr-menu .menu-left { padding-top: 10px; padding-bottom: 22px; gap: 8px; }
   #scr-menu .menu-brand .t1 { font-size: clamp(28px, 5vh, 42px); }
   #scr-menu .menu-list { gap: 4px; }
-  #scr-menu .menu-item { min-height: 38px; padding-block: 3px; font-size: 15px; }
+  #scr-menu .menu-item { min-height: 38px; padding-block: 3px; font-size: 16px; }
   #scr-menu .menu-item .mi-ico { width: 34px; }
-  #scr-menu .menu-item small { font-size: 10px; }
-  #scr-menu .menu-right { padding-top: 100px; padding-bottom: 18px; }
+  #scr-menu .menu-item small { font-size: 12px; }
+  #scr-menu .menu-right { justify-content: flex-start; padding-top: 112px; padding-bottom: 18px; }
+  #scr-menu .menu-info { margin: 0; }
   #scr-menu .menu-stats-grid { margin: 10px 0; }
   #scr-menu .menu-stat { padding: 7px 12px; }
   #scr-menu .partner-card { margin-top: 10px; }

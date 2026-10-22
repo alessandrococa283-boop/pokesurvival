@@ -35,7 +35,55 @@ G.MenuUI = (() => {
     const heading = $('menu-heading');
     const title = $('menu-info-title');
     const subtitle = $('menu-info-sub');
+    const menuLayout = document.querySelector('#scr-menu .menu-layout');
+    const menuList = document.querySelector('#scr-menu .menu-list');
+    const menuRight = $('menu-right');
+    const donate = document.querySelector('#topbar .topbar-donate');
     let selected = null;
+    let edgeScrollTarget = null, edgeScrollY = 0, edgeScrollFrame = 0, edgeScrollLast = 0;
+
+    donate.insertAdjacentHTML('afterbegin', G.Icons.html('heart', 18));
+
+    function stopEdgeScroll() {
+      edgeScrollTarget = null;
+      if (edgeScrollFrame) cancelAnimationFrame(edgeScrollFrame);
+      edgeScrollFrame = 0;
+      edgeScrollLast = 0;
+    }
+
+    function scrollAtEdge(now) {
+      if (!edgeScrollTarget || !G.UI.isOpen('scr-menu')) { stopEdgeScroll(); return; }
+      const rect = edgeScrollTarget.getBoundingClientRect();
+      const max = edgeScrollTarget.scrollHeight - edgeScrollTarget.clientHeight;
+      const distance = rect.bottom - edgeScrollY;
+      if (distance > 48 || max <= edgeScrollTarget.scrollTop) { stopEdgeScroll(); return; }
+      const proximity = Math.max(0, Math.min(1, (48 - distance) / 48));
+      const elapsed = edgeScrollLast ? Math.min(32, now - edgeScrollLast) : 16;
+      edgeScrollLast = now;
+      edgeScrollTarget.scrollTop += (100 + 620 * proximity) * elapsed / 1000;
+      edgeScrollFrame = requestAnimationFrame(scrollAtEdge);
+    }
+
+    menuLayout.addEventListener('pointermove', e => {
+      if (e.pointerType === 'touch') return;
+      const scrollable = [menuList, menuRight, menuLayout].find(el => {
+        const rect = el.getBoundingClientRect();
+        return e.clientX >= rect.left && e.clientX <= rect.right &&
+          e.clientY >= rect.top && e.clientY <= rect.bottom &&
+          el.scrollHeight > el.clientHeight + 1;
+      });
+      if (!scrollable || scrollable.getBoundingClientRect().bottom - e.clientY > 48) {
+        stopEdgeScroll();
+        return;
+      }
+      if (edgeScrollTarget !== scrollable) {
+        stopEdgeScroll();
+        edgeScrollTarget = scrollable;
+      }
+      edgeScrollY = e.clientY;
+      if (!edgeScrollFrame) edgeScrollFrame = requestAnimationFrame(scrollAtEdge);
+    });
+    menuLayout.addEventListener('pointerleave', stopEdgeScroll);
 
     function selectMenuItem(button) {
       if (!button || button === selected) return;
@@ -49,6 +97,7 @@ G.MenuUI = (() => {
       title.textContent = button.querySelector('.menu-item-copy').childNodes[0].textContent.trim();
       subtitle.textContent = button.querySelector('small').textContent;
       cta.dataset.go = button.dataset.go;
+      cta.dataset.sfx = button.dataset.go === 'play' ? 'confirm' : 'click';
       ctaLabel.textContent = ctaLabels[button.dataset.go];
       heading.classList.remove('swap');
       void heading.offsetWidth;
@@ -94,6 +143,8 @@ G.MenuUI = (() => {
     const shiny = !!s.partnerShiny && G.DB.ownsShiny(mon.dex);
     G.UI.chrome(true);
     G.UI.show('scr-menu');
+    $('menu-right').scrollTop = 0;
+    document.querySelector('#scr-menu .menu-list').scrollTop = 0;
     G.UI.sprite($('menu-partner'), mon.dex, { lively: true, scale: 4, hero: true, shiny });
     $('menu-partner').style.setProperty('--stage-c', shiny ? '#9ae6ff' : G.U.TYPE_COLOR[mon.types[0]]);
     $('menu-partner').classList.toggle('shiny', shiny);
@@ -144,15 +195,17 @@ G.MenuUI = (() => {
       });
     }
     G.InvitePop.refresh();
+    const selected = document.querySelector(`#scr-menu .menu-list [data-go="${$('menu-cta').dataset.go}"]`);
+    if (selected) $('menu-info-sub').textContent = selected.querySelector('small').textContent;
   }
 
   function openStoryPicker() {
-    const owned = G.DEX.filter(p => G.EvolutionData.isBase(p.dex) && G.DB.owns(p.dex));
+    const owned = G.DEX.filter(p => G.EvolutionData.isStoryStarter(p.dex) && G.DB.owns(p.dex));
     if (!owned.length) {
-      G.UI.toast('Aún no tienes una forma base de Kanto para jugar Historia.');
+      G.UI.toast('Aún no tienes un Pokémon permitido para jugar Historia.');
       return;
     }
-    storyDex = G.EvolutionData.isBase(G.DB.save.partner) && G.DB.owns(G.DB.save.partner)
+    storyDex = G.EvolutionData.isStoryStarter(G.DB.save.partner) && G.DB.owns(G.DB.save.partner)
       ? G.DB.save.partner : owned[0].dex;
     const grid = $('story-pokemon-grid');
     grid.innerHTML = '';
@@ -178,8 +231,8 @@ G.MenuUI = (() => {
 
   async function startStory() {
     const mon = G.DEX_BY[storyDex];
-    if (!mon || !G.EvolutionData.isBase(mon.dex) || !G.DB.owns(mon.dex)) {
-      G.UI.toast('Elige una forma base de Kanto que tengas en tu colección.');
+    if (!mon || !G.EvolutionData.isStoryStarter(mon.dex) || !G.DB.owns(mon.dex)) {
+      G.UI.toast('Elige un Pokémon permitido de Kanto que tengas en tu colección.');
       return;
     }
     storyQueued = true;
@@ -235,7 +288,10 @@ G.MenuUI = (() => {
   function socialLine() {
     const room = G.Social.room;
     const play = document.querySelector('#scr-menu [data-go=play] small');
-    if (play) play.textContent = room ? 'Volver a tu sala (' + room.members.length + '/' + G.Social.MAX_PLAYERS + ')' : 'Entra en la mazmorra';
+    if (play) {
+      play.textContent = room ? 'Volver a tu sala (' + room.members.length + '/' + G.Social.MAX_PLAYERS + ')' : 'Entra en la mazmorra';
+      if ($('menu-cta').dataset.go === 'play') $('menu-info-sub').textContent = play.textContent;
+    }
     const fr = G.Social.friends;
     const on = fr.filter(f => f.status === 'ok' && f.online).length;
     const req = fr.filter(f => f.status === 'in').length;

@@ -94,9 +94,9 @@ G.Game = (() => {
     storyVictory = false;
     const member = coop && coop.members.find(m => m.uid === G.Net.uid);
     const dex = storyMode && member ? member.dex : options.dex || save.partner;
-    if (storyMode && (!G.DEX_BY[dex] || dex < 1 || dex > 151 || !G.EvolutionData.isBase(dex) || !G.DB.owns(dex))) {
+    if (storyMode && (!G.DEX_BY[dex] || !G.EvolutionData.isStoryStarter(dex) || !G.DB.owns(dex))) {
       storyMode = false;
-      G.UI.toast('Historia requiere un Pokémon de Kanto (#001–151) que tengas en tu colección.');
+      G.UI.toast('Historia requiere un Pokémon de la primera etapa evolutiva, legendario, singular o sin evolución que tengas en tu colección.');
       return false;
     }
     const mon = G.DEX_BY[dex];
@@ -392,17 +392,16 @@ G.Game = (() => {
   }
 
   function showLevelChoices(level, done, coop = false) {
-    if (pl.pendingEvolutionMoves > 0) {
-      pl.pendingEvolutionMoves--;
-      G.RunUI.showLevelUp(level, G.LevelUp.offerEvolutionMove(pl), card => {
-        G.Audio.sfx('confirm');
-        card.apply(pl);
-        showLevelChoices(level, done, coop);
-      }, coop, false);
-      return;
-    }
     G.RunUI.showLevelUp(level, G.LevelUp.offer(pl), card => {
       G.Audio.sfx('confirm');
+      if (card.key === 'move:add') {
+        G.RunUI.showLevelUp(level, G.LevelUp.offerNewAttackMoves(pl), newMove => {
+          G.Audio.sfx('confirm');
+          newMove.apply(pl);
+          done();
+        }, coop, false);
+        return;
+      }
       card.apply(pl);
       done();
     }, coop);
@@ -1025,8 +1024,8 @@ G.Flow = {
   /** Empieza la partida en grupo (el anfitrión la manda a todos). */
   startCoop(cfg) {
     if (G.Game.state !== 'ui' || !G.Social.room) return;
-    if (cfg.story && cfg.members.some(m => m.dex < 1 || m.dex > 151 || !G.EvolutionData.isBase(m.dex))) {
-      G.UI.toast('Historia solo admite formas base de Pokémon de Kanto.');
+    if (cfg.story && cfg.members.some(m => !G.EvolutionData.isStoryStarter(m.dex))) {
+      G.UI.toast('Historia solo admite Pokémon de la primera etapa evolutiva, legendarios, singulares o sin evolución.');
       return;
     }
     G.LobbyUI.close();

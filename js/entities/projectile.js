@@ -24,6 +24,11 @@ G.Projectiles = (() => {
       color: '#fff', homing: 0, slow: 0, burn: 0, poison: 0, knock: 0,
       orb: false, rehit: 0.34, hitLog: null, phits: null
     }, o);
+    if (p.friendly && p.owner && p.owner.typePassive) {
+      const speed = p.owner.typePassive.projectileSpeed;
+      p.vx *= speed;
+      p.vy *= speed;
+    }
     if (p.friendly && !p.orb && !p.phits) p.phits = new Set();
     list.push(p);
     return p;

@@ -6,6 +6,34 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-22', title: ['Pasivas innatas y de tipo', 'Innate and Type Passives'], new: [
+    ['Añadimos las 151 pasivas innatas de Kanto y las bonificaciones heredadas por los 18 tipos, con reparto al 50% para Pokémon de doble tipo. La ficha separa la pasiva innata, las bonificaciones de tipo y la habilidad del compañero bebé.',
+     'Added all 151 Kanto innate passives and inherited bonuses for all 18 types, split 50/50 for dual-type Pokémon. The passive panel separates innate abilities, type bonuses, and the baby companion ability.']
+  ] },
+  { d: '2026-10-22', title: ['Líderes de gimnasio de Kanto', 'Kanto Gym Leaders'], new: [
+    ['Actualizamos el modo Historia con los ocho líderes de Kanto: aparecen en orden al alcanzar los niveles indicados y sus Pokémon insignia tienen niveles propios. El cooperativo escala la vida y el daño, y puedes volver a combatir contra líderes derrotados para mejorar tus tiempos sin recibir medallas duplicadas.',
+     'Story Mode now features all eight Kanto Gym Leaders: they appear in order at their configured levels, with individual levels for their signature Pokémon. Co-op scales their health and damage, and you can rebattle defeated leaders to improve your times without receiving duplicate badges.']
+  ] },
+  { d: '2026-10-22', title: ['Evoluciones y poder legendario', 'Evolutions and Legendary Power'], chg: [
+    ['En Historia solo puedes elegir Pokémon de la primera etapa evolutiva, legendarios, singulares o especies sin evolución. Las líneas de tres etapas evolucionan a los niveles 15 y 30; las de dos, al 20. Los legendarios y singulares sin evolución duplican sus estadísticas al nivel 18.',
+     'Story Mode now allows only first-stage Pokémon, Legendary or Mythical Pokémon, and species without evolutions. Three-stage lines evolve at levels 15 and 30; two-stage lines evolve at level 20. Non-evolving Legendary and Mythical Pokémon double their stats at level 18.']
+  ] },
+  { d: '2026-10-22', title: ['Hasta cuatro ataques simultáneos', 'Up to Four Simultaneous Attacks'], chg: [
+    ['Mejora tu ataque inicial hasta el nivel 7 para poder añadir un segundo. Al alcanzar el nivel 5 del segundo y del tercero se desbloquean el tercero y el cuarto. Cada ataque tiene la misma probabilidad de aparecer para mejorar y puede subir de nivel sin límite.',
+     'Upgrade your starting attack to level 7 to unlock a second. Reaching level 5 with the second and third attacks unlocks the third and fourth. Each attack has an equal chance to appear for an upgrade and can level up without limit.']
+  ] },
+  { d: '2026-10-22', title: ['Ajustes visuales del menú', 'Menu Visual Adjustments'], chg: [
+    ['La franja clara de la derecha ahora cubre el borde de Novedades y los botones del lado izquierdo son un poco más compactos.',
+     'The light panel on the right now extends behind the edge of News, and the buttons on the left are slightly more compact.']
+  ] },
+  { d: '2026-10-22', title: ['Barra superior fuera de los paneles', 'Top Bar Behind Panels'], chg: [
+    ['Los paneles de interacción ahora quedan delante de los iconos superiores, para que no tapen las opciones ni los botones para cerrar o volver.',
+     'Interaction panels now appear in front of the top icons, so they no longer cover options or close and back buttons.']
+  ] },
+  { d: '2026-10-22', title: ['Menú más legible y cómodo', 'Clearer, Easier-to-Use Menu'], chg: [
+    ['Mejoramos el contraste de los textos y controles, ocultamos la barra de desplazamiento sin quitar el scroll y añadimos desplazamiento automático al acercar el puntero al borde inferior. Los botones superiores ahora van juntos y Donar tiene un corazón.',
+     'We improved text and control contrast, hid the scrollbar without disabling scrolling, and added automatic scrolling near the lower edge. Top buttons now sit together, and Donate has a heart icon.']
+  ] },
   { d: '2026-10-22', title: ['Nuevo menú principal', 'New Main Menu'], new: [
     ['Rediseñamos el menú con navegación lateral, detalles de cada sección, estadísticas reales de la partida y la ficha de tu compañero. Los botones principales mantienen sus acciones y también puedes recorrerlos con las flechas del teclado.',
      'We redesigned the menu with side navigation, section details, real run statistics and your partner’s profile. Main buttons keep their existing actions, and you can also navigate them with the arrow keys.']

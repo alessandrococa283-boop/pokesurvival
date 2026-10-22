@@ -39,8 +39,7 @@ G.LevelUp = (() => {
       });
     }
 
-    const move = pl.activeMove();
-    if (move) {
+    for (const move of pl.moves) {
       const next = G.Moves.nextUpText(move);
       if (next) {
         add({
@@ -48,17 +47,22 @@ G.LevelUp = (() => {
           color: G.U.TYPE_COLOR[move.type], tag: 'Ataque',
           title: `${move.name} · Nv. ${move.lvl + 1}`,
           desc: next,
-          apply: p => {
-            const previousLevel = move.lvl;
-            G.Moves.levelUp(move);
-            if (previousLevel < 10 && move.lvl >= 10 && !move.evolutionExtraGranted) {
-              move.evolutionExtraGranted = true;
-              p.pendingEvolutionMoves++;
-            }
-          }
+          apply: () => { G.Moves.levelUp(move); }
         });
       }
     }
+
+    const newMoves = availableNewMoves(pl);
+    if (pl.canAddAttack() && newMoves.length) {
+      add({
+        w: 10, type: 'new', key: 'move:add', icon: 'move:' + newMoves[0].id,
+        color: G.U.TYPE_COLOR[newMoves[0].type], tag: 'Ataque extra',
+        title: 'Aprender otro ataque',
+        desc: `Elige un movimiento que se lanzará junto con los ${pl.moves.length} actuales.`,
+        apply: () => {}
+      });
+    }
+    const move = pl.activeMove();
     if (move && RANGED.has(move.kind)) {
       if ((pl.projectileBonus || 0) < 5) {
         add({
@@ -125,25 +129,29 @@ G.LevelUp = (() => {
     return picked;
   }
 
-  function offerEvolutionMove(pl, n = 3) {
-    const available = move => !pl.hasMove(move.id) && !pl.banned.has(move.id);
-    let pool = G.Moves.availableFor(pl.mon).filter(available);
-    if (!pool.length) pool = G.Moves.ALL.filter(available);
+  function availableNewMoves(pl) {
+    return G.Moves.availableFor(pl.mon).filter(move => !pl.hasMove(move.id) && !pl.banned.has(move.id));
+  }
+
+  function offerNewAttackMoves(pl, n = 3) {
+    const pool = availableNewMoves(pl);
     const picked = [];
     while (picked.length < n && pool.length) {
       const index = Math.floor(Math.random() * pool.length);
       const move = pool.splice(index, 1)[0];
       picked.push({
-        w: 1, type: 'evo', key: 'evolution-move:' + move.id,
+        w: 1, type: 'evo', key: 'attack-move:' + move.id,
         icon: 'move:' + move.id, color: G.U.TYPE_COLOR[move.type], tag: 'Ataque extra',
         title: move.name,
-        desc: `${move.desc} Se lanzará junto con ${pl.activeMove().name}.`,
-        apply: p => { p.addEvolutionMove(move.id); }
+        desc: `${move.desc} Se lanzará junto con los demás ataques.`,
+        apply: p => {
+          if (!p.addAttackMove(move.id)) throw new Error(`No se pudo añadir el ataque ${move.name}.`);
+        }
       });
     }
-    if (!picked.length) throw new Error(`No hay ataques extra disponibles para ${pl.mon.name}.`);
+    if (!picked.length) throw new Error(`No hay ataques nuevos disponibles para ${pl.mon.name}.`);
     return picked;
   }
 
-  return { offer, offerEvolutionMove, STATS };
+  return { offer, offerNewAttackMoves, STATS };
 })();

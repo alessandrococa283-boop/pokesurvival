@@ -3,7 +3,7 @@ G.GymBattle = (() => {
   const R = 11, ARENA_X = 7600, ARENA_Y = 7600;
   const TS = () => G.Tiles.T * G.Sprites.PX;
   const authority = () => !G.Coop.active || G.Coop.isHost;
-  let story = false, portal = null, fight = null;
+  let story = false, portal = null, fight = null, replayIndex = 0;
   const art = new Map();
 
   function image(src) {
@@ -64,6 +64,7 @@ G.GymBattle = (() => {
     story = !!enabled;
     portal = null;
     fight = null;
+    replayIndex = 0;
   }
 
   function medals() {
@@ -73,8 +74,13 @@ G.GymBattle = (() => {
     return save.gymMedals;
   }
 
-  function nextGym() {
-    return G.GymLeaders.LIST.find(gym => !medals()[gym.id]);
+  function nextGym(level) {
+    const pending = G.GymLeaders.LIST.find(gym => !medals()[gym.id]);
+    if (pending && level >= pending.appearanceLevel) return pending;
+    const defeated = G.GymLeaders.LIST.filter(gym => medals()[gym.id] && level >= gym.appearanceLevel);
+    return defeated.length
+      ? defeated[replayIndex % defeated.length]
+      : pending || G.GymLeaders.LIST[replayIndex % G.GymLeaders.LIST.length];
   }
 
   function openPortal(gym, pl) {
@@ -84,7 +90,7 @@ G.GymBattle = (() => {
       if (!G.World.isFree(x, y, 24)) continue;
       portal = { gym, x, y, t: 0 };
       G.Sprites.preload([gym.pokemon]);
-      G.Spawner.say('¡' + gym.leader + ' te espera! Entra en el portal para desafiarle.', 4);
+      G.Spawner.say('¡' + gym.leader + ' ha aparecido en ' + gym.city + '! Su ' + G.DEX_BY[gym.pokemon].name + ' está al nivel ' + gym.pokemonLevel + '. Entra en el portal para desafiarle.', 5);
       if (G.Coop.isHost) G.Coop.broadcast(['gym', 'portal', { id: gym.id, x, y }]);
       return;
     }
@@ -97,9 +103,9 @@ G.GymBattle = (() => {
       return;
     }
     if (!authority()) return;
-    const gym = nextGym();
+    const gym = nextGym(pl.level);
     if (!gym || !pl || pl.dead) return;
-    if (!portal && pl.level >= gym.level) openPortal(gym, pl);
+    if (!portal && pl.level >= gym.appearanceLevel) openPortal(gym, pl);
     if (!portal) return;
     portal.t += dt;
     if (G.U.dist2(pl.x, pl.y, portal.x, portal.y - 10) < 36 * 36) enter();
@@ -158,7 +164,7 @@ G.GymBattle = (() => {
 
   function spawnLeader() {
     const gym = fight.gym, mon = G.DEX_BY[gym.pokemon], move = specialMove(gym);
-    const level = gym.level, n = G.Game.everyone().length;
+    const level = gym.pokemonLevel, n = G.Game.everyone().length;
     const def = {
       dex: mon.dex, name: mon.name,
       hp: Math.round((180 + mon.hp * 2.2) * level * 1.4),
@@ -170,7 +176,12 @@ G.GymBattle = (() => {
       shotDmg: Math.round((8 + mon.atk * 0.14) * (0.75 + level / 24)),
       shotCd: Math.max(0.7, 2.2 - level / 35), range: 270
     };
-    const scale = { hp: 1 + 0.35 * (n - 1), spd: 1, dmg: 1 + 0.2 * (n - 1) };
+    const playerScale = gym.coopMultiplier
+      ? Math.pow(gym.coopMultiplier, n - 1)
+      : null;
+    const scale = playerScale
+      ? { hp: playerScale, spd: 1, dmg: playerScale }
+      : { hp: 1 + 0.35 * (n - 1), spd: 1, dmg: 1 + 0.2 * (n - 1) };
     const e = new G.Enemy(def, fight.center.x, fight.center.y - TS() * 3.5, scale, true);
     e.gymLeader = gym.id;
     e.level = level;
@@ -200,17 +211,27 @@ G.GymBattle = (() => {
   function won(recordTime) {
     if (!fight || fight.phase !== 'fight') return;
     const id = fight.gym.id, elapsed = recordTime || Math.max(1, Math.floor(fight.t));
+    const saved = medals()[id], alreadyComplete = G.GymLeaders.LIST.every(gym => medals()[gym.id]);
     fight.phase = 'won'; fight.endT = 4;
     if (authority()) {
       G.Coop.isHost && G.Coop.broadcast(['gym', 'win', id, elapsed]);
-      G.Pickups.dropXp(fight.center.x, fight.center.y, fight.gym.level * 100);
+      G.Pickups.dropXp(fight.center.x, fight.center.y, fight.gym.pokemonLevel * 100);
     }
-    const saved = medals()[id];
-    G.DB.save.gymMedals[id] = { at: saved && saved.at || Date.now(), bestTime: Math.min(saved && saved.bestTime || Infinity, elapsed) };
+    G.DB.save.gymMedals[id] = {
+      at: saved && saved.at || Date.now(),
+      lastTime: elapsed,
+      bestTime: Math.min(saved && saved.bestTime || Infinity, elapsed)
+    };
     G.DB.commit(true);
-    G.Spawner.say('¡' + fight.gym.leader + ' derrotado! Has ganado la ' + fight.gym.medal + ' y experiencia extra.', 4, true);
+    if (!saved) {
+      G.Spawner.say('¡' + fight.gym.leader + ' derrotado! Has ganado la ' + fight.gym.medal + ' y experiencia extra.', 4, true);
+    } else {
+      G.Spawner.say('¡Has vencido otra vez a ' + fight.gym.leader + '! Tiempo: ' + G.U.mmss(elapsed) + ' · Mejor: ' + G.U.mmss(G.DB.save.gymMedals[id].bestTime) + '.', 4, true);
+    }
     G.Audio.sfx('legend');
-    if (G.GymLeaders.LIST.every(gym => medals()[gym.id])) G.Game.completeStory();
+    if (saved) replayIndex = (replayIndex + 1) % G.GymLeaders.LIST.length;
+    else if (G.GymLeaders.LIST.every(gym => medals()[gym.id])) replayIndex = 0;
+    if (!alreadyComplete && G.GymLeaders.LIST.every(gym => medals()[gym.id])) G.Game.completeStory();
   }
 
   function lost() {
@@ -280,6 +301,6 @@ G.GymBattle = (() => {
     get inArena() { return !!fight; },
     get story() { return story; },
     get medals() { return medals(); },
-    debugOpen() { const gym = nextGym(); if (gym) openPortal(gym, G.Game.player); }
+    debugOpen() { const gym = nextGym(G.Game.player.level); if (gym) openPortal(gym, G.Game.player); }
   };
 })();

@@ -52,7 +52,7 @@
       this.slow = 0; this.slowT = 0;
       this.burn = 0; this.burnT = 0; this.burnTick = 0; this.burnDamageMul = 1;
       this.poison = 0; this.poisonT = 0; this.poisonTick = 0;
-      this.shockT = 0; this.charmedT = 0; this.charmAttackT = 0;
+      this.shockT = 0; this.charmedT = 0; this.charmAttackT = 0; this.stunT = 0; this.fearT = 0;
       this.lavaTick = 0;
       this.kx = 0; this.ky = 0;
       this.touchCd = 0;
@@ -71,6 +71,7 @@
       // personalidades
       this.sc = sc;                       // escala de la run (para sus invocaciones)
       this.shield = 0; this.shieldT = 0;  // escudo que absorbe daño
+      this.healReduction = 0;
       this.skillCd = G.U.rand(1, 4);      // escudos / saltos
       this.minions = [];
       this.jump = null;                   // { sx, sy, tx, ty, t, dur }
@@ -156,6 +157,18 @@
     applyCharm(dur = 2) {
       if (this.remote) return;
       this.charmedT = Math.max(this.charmedT, dur);
+    }
+    applyStun(dur = 1) {
+      if (this.remote) { G.Coop.status(this, 't', dur); return; }
+      this.stunT = Math.max(this.stunT, dur * (this.boss ? 0.35 : 1));
+    }
+    applyFear(dur = 1.5) {
+      if (this.remote) { G.Coop.status(this, 'f', dur); return; }
+      this.fearT = Math.max(this.fearT, dur * (this.boss ? 0.35 : 1));
+    }
+    applyHealReduction(rate) {
+      if (this.remote) { G.Coop.status(this, 'r', rate); return; }
+      this.healReduction = Math.max(this.healReduction, rate);
     }
 
     die() {
@@ -275,6 +288,8 @@
       }
       if (this.shockT > 0) this.shockT -= dt;
       if (this.charmedT > 0) this.charmedT -= dt;
+      if (this.stunT > 0) this.stunT -= dt;
+      if (this.fearT > 0) this.fearT -= dt;
       if (this.dead) return;
 
       // --- terreno ---
@@ -292,6 +307,20 @@
       const spd = this.spd * (1 - this.slow) * terrainMul * G.Weather.speedFor(this.types);
       let [dx, dy] = G.U.norm(pl.x - this.x, pl.y - this.y);
       const dist = G.U.dist(this.x, this.y, pl.x, pl.y);
+      if (this.stunT > 0) {
+        this.anim.loop('Idle');
+        return;
+      }
+      if (this.fearT > 0) {
+        [dx, dy] = G.U.norm(this.x - pl.x, this.y - pl.y);
+        this.x += (dx * spd + this.kx) * dt;
+        this.y += (dy * spd + this.ky) * dt;
+        this.kx *= Math.pow(0.0015, dt); this.ky *= Math.pow(0.0015, dt);
+        if (!this.flying) G.World.collide(this);
+        this.anim.dir = G.Sprites.dirFromAngle(Math.atan2(dy, dx));
+        this.anim.loop('Walk', Math.max(0.6, spd / 70));
+        return;
+      }
       if (this.charmedT > 0) {
         let target = null, targetDist = 220;
         for (const other of G.EnemyMgr.all()) {
@@ -638,7 +667,7 @@
       let n = 0;
       for (const e of G.EnemyMgr.queryCircle(this.x, this.y, 150)) {
         if (e.dead || e.hp >= e.maxHp) continue;
-        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * k);
+        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * k * (1 - e.healReduction));
         G.FX.burst(e.x, e.y - e.bodyH * 0.6, '#7dffb0', 5, 60);
         n++;
       }

@@ -35,11 +35,16 @@ G.RunUI = (() => {
 
   function showPassiveInfo(pl) {
     const passive = G.PassiveData.get(pl.dex);
+    const types = [...new Set(pl.mon.types || [])];
+    const typeNames = types.map(type => G.U.TYPE_NAME[type] || type);
+    const typeBonus = G.PassiveData.typeDescription(types);
     const baby = pl.babyDex && G.BabyMons.BY_DEX[pl.babyDex];
     $('passive-title').textContent = passive ? passive.name : 'Sin habilidad innata';
     $('passive-level').textContent = passive ? pl.mon.name + ' · Nivel ' + passive.level : pl.mon.name;
     $('passive-desc').textContent = passive
       ? passive.description : 'Este Pokémon no tiene una pasiva innata configurada.';
+    $('passive-type-title').textContent = typeNames.length ? typeNames.join(' · ') : 'Sin tipo';
+    $('passive-type-desc').textContent = typeBonus || 'Sin bonificación heredada por tipo.';
     $('passive-baby-title').textContent = baby ? baby.name + ' · ' + baby.passive : 'Sin compañero bebé';
     $('passive-baby-desc').textContent = baby
       ? baby.description : 'Elige un compañero bebé en la colección para ver su habilidad aquí.';
@@ -54,7 +59,7 @@ G.RunUI = (() => {
     offerCb = cb; coopMode = coop; allowReroll = canReroll;
     $('lvl-num').textContent = level;
     $('lvl-hint').innerHTML = list.every(card => card.type === 'evo')
-      ? '¡La evolución te permite aprender un ataque extra! · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>'
+      ? 'Elige un ataque para añadirlo a tus movimientos · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>'
       : 'Elige una recompensa · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>';
     $('lvl-wait').textContent = '';
     $('lvl-wait').classList.toggle('hidden', !coop);

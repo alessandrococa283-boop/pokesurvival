@@ -51,7 +51,9 @@ G.Combat = (() => {
     }
     const baby = pl.babyPassive || {};
     const speed = m.type === 'electric' ? baby.electricSpeed || 1 : baby.otherSpeed || 1;
-    m.t = Math.max(0.05, m.cd * pl.cdMul * pl.attackSpeedMul / speed);
+    const attackRate = pl.attackRate * (m.type === 'fire' && pl.lowHpPassive
+      ? 1 + pl.passive.lowHpBonus : 1);
+    m.t = Math.max(0.05, m.cd * pl.cdMul * pl.typePassive.cooldown * pl.attackSpeedMul / (speed * attackRate));
     pl.cast(m);
     if (G.Coop.active) G.Coop.cast(pl, m);
     // Vínculo: su icono destella en el HUD al lanzarse (uno que explota pegado al
@@ -63,8 +65,7 @@ G.Combat = (() => {
   }
 
   function withBabyEffects(pl, m) {
-    const baby = pl.babyPassive;
-    if (!baby) return m;
+    const baby = pl.babyPassive || {};
     let damage = 1;
     if (m.kind === 'melee' && baby.meleeDamage) {
       damage *= baby.meleeDamage;
@@ -75,9 +76,13 @@ G.Combat = (() => {
     }
     const copy = Object.assign({}, m);
     if (damage !== 1) copy.dmg *= damage;
-    if (baby.area) {
-      if (copy.radius) copy.radius *= baby.area;
-      if (copy.width) copy.width *= baby.area;
+    const passive = pl.passive;
+    const passiveArea = passive.area * pl.typePassive.area * (m.type === 'fire' && pl.lowHpPassive
+      ? 1 + passive.lowHpBonus : 1);
+    if (baby.area || passiveArea !== 1) {
+      const area = (baby.area || 1) * passiveArea;
+      if (copy.radius) copy.radius *= area;
+      if (copy.width) copy.width *= area;
     }
     return copy;
   }
@@ -599,20 +604,45 @@ G.Combat = (() => {
 
   // Golpe crítico (Mejoras → Golpe Crítico): x1,5 de daño, número naranja y grande.
   const CRIT_MUL = 1.5;
-  const isCrit = pl => !ghost && pl.critChance > 0 && Math.random() < pl.critChance;
+  const isCrit = pl => {
+    const chance = Math.min(1, pl.critChance + pl.passiveCritChance);
+    return !ghost && chance > 0 && Math.random() < chance;
+  };
+
+  function passiveDamageMultiplier(pl, type, enemy) {
+    const passive = pl.passive;
+    const typePassive = pl.typePassive;
+    const lowHp = type === 'fire' && pl.lowHpPassive;
+    const highHp = passive.highHpThreshold && enemy.hp / enemy.maxHp > passive.highHpThreshold &&
+      !enemy.boss;
+    const poisoned = passive.poisonedBonus && enemy.poison > 0;
+    const controlled = enemy.stunT > 0 || enemy.slowT > 0 || enemy.poisonT > 0 ||
+      enemy.burnT > 0 || enemy.charmedT > 0 || enemy.fearT > 0;
+    const lowEnemyHp = typePassive.lowHpDamage && enemy.hp / enemy.maxHp < 0.4;
+    return (type === 'fire' ? passive.fireDamage * (lowHp ? 1 + passive.lowHpBonus : 1) : 1) *
+      (highHp ? 1 + passive.highHpBonus : 1) *
+      (poisoned ? 1 + passive.poisonedBonus : 1) *
+      (controlled ? 1 + passive.statusBonus : 1) *
+      (controlled ? 1 + typePassive.statusDamage : 1) *
+      (lowEnemyHp ? 1 + typePassive.lowHpDamage : 1) *
+      (type === 'psychic' && enemy.slowT > 0 ? 1 + passive.slowTargetBonus : 1);
+  }
 
   function hit(pl, e, dmg, col, dx, dy, knock, m) {
     const k = typeK(m.type, e);
     const crit = isCrit(pl);
     const baby = pl.babyPassive || {};
-    dmg *= k * (crit ? CRIT_MUL + (pl.critDamageBonus || 0) : 1);
+    dmg *= k * passiveDamageMultiplier(pl, m.type, e) *
+      (crit ? CRIT_MUL + (pl.critDamageBonus || 0) + pl.passiveCritDamage : 1);
     if (m.type === 'electric' && e.shockT > 0) dmg *= baby.electricDamage || 1;
     e.hurt(dmg, col, dx, dy, knock, crit ? 'crit' : G.Types.label(G.Types.mult(m.type, e.types)));
-    if (!ghost) pl.onDealt(dmg, m.kind);
+    if (!ghost) pl.onDealt(dmg, m.kind, crit, e);
     pl.dmgDealt += dmg;
     if (!ghost) {
       e.lastHitType = m.type;
       applyBabyStatuses(pl, e, m);
+      applyInnateStatus(pl, e, crit);
+      applyTypeStatuses(pl, e);
     }
   }
 
@@ -625,6 +655,7 @@ G.Combat = (() => {
     if (baby.paralyzeChance && Math.random() < baby.paralyzeChance) {
       e.applySlow(0.8, (e.boss ? baby.paralyzeDuration * 0.35 : baby.paralyzeDuration) * duration);
     }
+
     if (baby.charmChance && Math.random() < baby.charmChance) e.applyCharm(baby.charmDuration);
     if (baby.slowChance && Math.random() < baby.slowChance) {
       e.applySlow(baby.slowFactor, baby.slowDuration * duration);
@@ -635,6 +666,30 @@ G.Combat = (() => {
     if (m.type === 'electric' && baby.shockChance && Math.random() < baby.shockChance) {
       e.shockT = Math.max(e.shockT || 0, baby.shockDuration);
     }
+  }
+
+  function applyInnateStatus(pl, e, critical = false) {
+    const statuses = pl.passive.onHitEffects || (pl.passive.onHit ? [pl.passive.onHit] : []);
+    for (const status of statuses) {
+      if (status.criticalOnly && !critical) continue;
+      if (status.chance <= 0 || (status.chance < 1 && Math.random() >= status.chance)) continue;
+      const key = status.randomStatus
+        ? ['burn', 'freeze', 'paralysis', 'poison'][Math.floor(Math.random() * 4)]
+        : status.key;
+      if (key === 'freeze' || key === 'paralysis' || key === 'stun') e.applyStun(status.duration);
+      else if (key === 'fear') {
+        e.applyFear(status.duration);
+        e.applyPoison(1, status.duration);
+      } else if (key === 'charm') e.applyCharm(status.duration);
+      else if (key === 'poison') e.applyPoison(1, status.duration);
+      else if (key === 'burn') e.applyBurn(1, status.duration);
+      else if (key === 'slow') e.applySlow(1 - status.strength, status.duration);
+    }
+  }
+
+  function applyTypeStatuses(pl, e) {
+    if (pl.typePassive.enemyHealingReduction && e.applyHealReduction)
+      e.applyHealReduction(pl.typePassive.enemyHealingReduction);
   }
 
   // ---------------- colisiones ----------------
@@ -737,16 +792,18 @@ G.Combat = (() => {
 
         const crit = isCrit(pl);
         const baby = pl.babyPassive || {};
-        const k = (p.mtype ? typeK(p.mtype, e) : 1) *
-                  (crit ? CRIT_MUL + (pl.critDamageBonus || 0) : 1) *
+        const k = (p.mtype ? typeK(p.mtype, e) : 1) * passiveDamageMultiplier(pl, p.mtype, e) *
+                  (crit ? CRIT_MUL + (pl.critDamageBonus || 0) + pl.passiveCritDamage : 1) *
                   (p.mtype === 'electric' && e.shockT > 0 ? baby.electricDamage || 1 : 1);
         e.hurt(p.dmg * k, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), p.knock,
                crit ? 'crit' : p.mtype ? G.Types.label(G.Types.mult(p.mtype, e.types)) : null);
         if (Math.random() < 0.5) G.FX.sp('impact', p.vis ? p.vis.pal : 'normal', e.x, e.y - e.bodyH * 0.5, { life: 0.12, scale: 1 });
         pl.dmgDealt += p.dmg * k;
-        pl.onDealt(p.dmg * k, p.kind);
+        pl.onDealt(p.dmg * k, p.kind, crit, e);
         e.lastHitType = p.mtype;
         applyBabyStatuses(pl, e, p);
+        applyInnateStatus(pl, e, crit);
+        applyTypeStatuses(pl, e);
 
         if (!p.orb && p.bounces > 0 && bounceTo(p, e)) break;
         if (!p.orb) {
