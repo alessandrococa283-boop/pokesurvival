@@ -7,25 +7,73 @@ G.MenuUI = (() => {
 
   function init() {
     const ICON = { play: 'ball', story: 'medal2', 'gym-medals': 'medal3', dex: 'book', cards: 'book', upgrades: 'up', gacha: 'ball4', 'baby-gacha': 'ticket10', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear', support: 'heart' };
+    const actions = {
+      play: () => { if (G.Social.room) G.LobbyUI.open(); else G.Flow.play(); },
+      story: openStoryPicker,
+      'gym-medals': openGymMedals,
+      dex: openDex,
+      cards: () => G.CardCollectionUI.open(),
+      upgrades: openUpgrades,
+      gacha: () => G.GachaUI.open(),
+      'baby-gacha': () => G.GachaUI.openBabies(),
+      goals: () => G.GoalsUI.open(),
+      friends: () => G.FriendsUI.open(),
+      rank: () => G.RankingUI.open(),
+      settings: () => G.SettingsUI.open(),
+      support: () => G.SupportUI.open()
+    };
+    const ctaLabels = {
+      play: 'Empezar run', story: 'Continuar historia', 'gym-medals': 'Ver medallas',
+      dex: 'Ver Pokémon', cards: 'Ver cartas', upgrades: 'Ver mejoras',
+      gacha: 'Abrir gacha', 'baby-gacha': 'Ver compañeros', goals: 'Ver misiones',
+      friends: 'Invitar amigos', rank: 'Ver ranking', settings: 'Abrir ajustes',
+      support: 'Apoyar el juego'
+    };
+    const buttons = [...document.querySelectorAll('#scr-menu .menu-list [data-go]')];
+    const cta = $('menu-cta');
+    const ctaLabel = $('menu-cta-label');
+    const heading = $('menu-heading');
+    const title = $('menu-info-title');
+    const subtitle = $('menu-info-sub');
+    let selected = null;
+
+    function selectMenuItem(button) {
+      if (!button || button === selected) return;
+      selected = button;
+      buttons.forEach(b => {
+        const active = b === button;
+        b.classList.toggle('is-active', active);
+        if (active) b.setAttribute('aria-current', 'true');
+        else b.removeAttribute('aria-current');
+      });
+      title.textContent = button.querySelector('.menu-item-copy').childNodes[0].textContent.trim();
+      subtitle.textContent = button.querySelector('small').textContent;
+      cta.dataset.go = button.dataset.go;
+      ctaLabel.textContent = ctaLabels[button.dataset.go];
+      heading.classList.remove('swap');
+      void heading.offsetWidth;
+      heading.classList.add('swap');
+    }
+
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
-      b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 26)}</span>`);
+      if (b !== cta) b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 26)}</span>`);
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
-      b.onclick = () => {
-        const go = b.dataset.go;
-        if (go === 'play') { if (G.Social.room) G.LobbyUI.open(); else G.Flow.play(); }
-        else if (go === 'story') openStoryPicker();
-        else if (go === 'gym-medals') openGymMedals();
-        else if (go === 'dex') openDex();
-        else if (go === 'cards') G.CardCollectionUI.open();
-        else if (go === 'upgrades') openUpgrades();
-        else if (go === 'gacha') G.GachaUI.open();
-        else if (go === 'baby-gacha') G.GachaUI.openBabies();
-        else if (go === 'goals') G.GoalsUI.open();
-        else if (go === 'friends') G.FriendsUI.open();
-        else if (go === 'rank') G.RankingUI.open();
-        else if (go === 'settings') G.SettingsUI.open();
-        else if (go === 'support') G.SupportUI.open();
-      };
+      b.onclick = () => actions[b.dataset.go]();
+    });
+    buttons.forEach(b => {
+      b.addEventListener('mouseenter', () => selectMenuItem(b));
+      b.addEventListener('focus', () => selectMenuItem(b));
+    });
+    cta.onclick = () => actions[cta.dataset.go]();
+    selectMenuItem(buttons[0]);
+    document.addEventListener('keydown', e => {
+      if (!G.UI.isOpen('scr-menu') || !['ArrowDown', 'ArrowUp'].includes(e.key)) return;
+      if (e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+      e.preventDefault();
+      const index = buttons.indexOf(selected);
+      const next = Math.max(0, Math.min(buttons.length - 1, index + (e.key === 'ArrowDown' ? 1 : -1)));
+      buttons[next].focus();
+      buttons[next].scrollIntoView({ block: 'nearest' });
     });
     document.querySelectorAll('[data-back]').forEach(b => { b.onclick = open; });
     $('story-cancel').onclick = open;
@@ -71,10 +119,13 @@ G.MenuUI = (() => {
     $('menu-dex-count').textContent = `${owned} / ${G.DEX.length}` + (shinies ? ` · ${shinies} shiny` : '');
 
     const st = s.stats;
-    $('menu-stats').innerHTML =
-      `Runs <b style="color:#fff">${st.runs}</b> · Mejor tiempo <b style="color:#fff">${G.U.mmss(st.bestTime)}</b><br>` +
-      `Mejor nivel <b style="color:#fff">${st.bestLevel}</b> · Derrotados <b style="color:#fff">${st.totalKills.toLocaleString('es')}</b>` +
-      (G.DB.guest ? '<br><span style="color:#ffb0b8">Modo invitado: no se guarda</span>' : '');
+    $('menu-stats').innerHTML = [
+      ['Runs', st.runs],
+      ['Mejor tiempo', G.U.mmss(st.bestTime)],
+      ['Mejor nivel', st.bestLevel],
+      ['Derrotados', st.totalKills.toLocaleString('es')]
+    ].map(([label, value]) => `<div class="menu-stat"><span>${label}</span><b>${value}</b></div>`).join('') +
+      (G.DB.guest ? '<div class="menu-guest-note">Modo invitado: no se guarda</div>' : '');
 
     socialLine();
     // Premios de misiones por recoger.

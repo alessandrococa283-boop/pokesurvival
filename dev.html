@@ -91,7 +91,6 @@
   <div class="box" style="width:min(420px,100%)">
     <div class="logo">
       <div class="t1">PokéSurvival</div>
-      <div class="t2">Mundo Misterioso</div>
     </div>
     <p class="login-tag">Sobrevive a las hordas con tu compañero Pokémon · gratis, en PC y móvil</p>
     <p class="login-official">Proyecto fan gratuito, inspirado en PokéSurvivor · no oficial</p>
@@ -168,39 +167,47 @@
 
 <!-- ====== Menú principal ====== -->
 <section id="scr-menu" class="scr hidden">
-  <div class="menu-left">
-    <div class="logo">
-      <div class="t1">PokéSurvival</div>
-      <div class="t2">Mundo Misterioso</div>
-    </div>
-    <div class="partner-card">
-      <canvas id="menu-partner" class="stage" width="260" height="200"></canvas>
-      <div class="nm" id="menu-partner-name"></div>
-      <div class="lv" id="menu-partner-info"></div>
-      <div class="seg hidden" id="menu-shiny"><button data-v="0">Normal</button><button data-v="1"></button></div>
-    </div>
-  </div>
-  <div class="menu-right">
-    <div class="box">
-      <div class="menu-list">
-        <button class="menu-item play" data-go="play">Jugar<small>Entra en la mazmorra</small></button>
-        <button class="menu-item" data-go="story">Historia<small>Conquista los 8 gimnasios de Kanto</small></button>
-        <button class="menu-item" data-go="gym-medals">Medallas<small id="menu-gym-medals-sub">Tu colección de Kanto</small></button>
-        <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
-        <button class="menu-item" data-go="cards">Cartas<small>Colección clásica</small></button>
-        <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
-        <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
-        <button class="menu-item" data-go="baby-gacha">Compañeros bebé<small>Incuba huevos y reúne Pokémon bebé</small></button>
-        <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
-        <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, hasta 5</small></button>
-        <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
-        <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
-        <button class="menu-item" data-go="support">Donar<small>Ayuda a mantener el servidor</small></button>
+  <div class="menu-layout">
+    <aside class="menu-left">
+      <div class="logo menu-brand">
+        <span class="menu-ball" aria-hidden="true"></span>
+        <div class="t1">PokéSurvival</div>
       </div>
-    </div>
-    <div class="box" style="padding:14px 18px">
-      <div id="menu-stats" style="font-size:14px;color:var(--muted)"></div>
-    </div>
+      <nav class="menu-list" aria-label="Menú principal">
+        <button class="menu-item play" data-go="play"><span class="menu-item-copy">Jugar<small>Empieza una nueva run</small></span></button>
+        <button class="menu-item" data-go="story"><span class="menu-item-copy">Historia<small>Conquista los 8 gimnasios de Kanto</small></span></button>
+        <button class="menu-item" data-go="gym-medals"><span class="menu-item-copy">Medallas<small id="menu-gym-medals-sub">Tu colección de Kanto</small></span></button>
+        <button class="menu-item" data-go="dex"><span class="menu-item-copy">Pokémon<small id="menu-dex-count">Tu colección</small></span></button>
+        <button class="menu-item" data-go="cards"><span class="menu-item-copy">Cartas<small>Colección clásica y Cute</small></span></button>
+        <button class="menu-item" data-go="upgrades"><span class="menu-item-copy">Mejoras<small>Haz más fuerte cada run</small></span></button>
+        <button class="menu-item" data-go="gacha"><span class="menu-item-copy">Gacha<small>9 regiones · Pokémon y shinies</small></span></button>
+        <button class="menu-item" data-go="baby-gacha"><span class="menu-item-copy">Compañeros bebé<small>Incuba huevos y reúne Pokémon bebé</small></span></button>
+        <button class="menu-item" data-go="goals"><span class="menu-item-copy">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></span></button>
+        <button class="menu-item" data-go="friends"><span class="menu-item-copy">Amigos<small id="menu-friends-sub">Juega en grupo, hasta 5</small></span></button>
+        <button class="menu-item" data-go="rank"><span class="menu-item-copy">Ranking<small>Quién aguanta más</small></span></button>
+        <button class="menu-item" data-go="settings"><span class="menu-item-copy">Ajustes<small>Sonido, gráficos, controles y cuenta</small></span></button>
+        <button class="menu-item" data-go="support"><span class="menu-item-copy">Donar<small>Ayuda a mantener el servidor</small></span></button>
+      </nav>
+    </aside>
+    <main class="menu-right">
+      <div class="menu-info">
+        <div class="menu-heading" id="menu-heading">
+          <h2 id="menu-info-title">Jugar</h2>
+          <p id="menu-info-sub">Empieza una nueva run</p>
+        </div>
+        <div class="menu-stats-grid" id="menu-stats" aria-label="Estadísticas de la partida"></div>
+        <button class="menu-cta" id="menu-cta" type="button" data-go="play">
+          <span id="menu-cta-label">Empezar run</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M14 6l6 6-6 6"/></svg>
+        </button>
+        <div class="partner-card">
+          <canvas id="menu-partner" class="stage" width="260" height="200"></canvas>
+          <div class="nm" id="menu-partner-name"></div>
+          <div class="lv" id="menu-partner-info"></div>
+          <div class="seg hidden" id="menu-shiny"><button data-v="0">Normal</button><button data-v="1"></button></div>
+        </div>
+      </div>
+    </main>
   </div>
 </section>
 
@@ -244,6 +251,7 @@
   <button id="btn-sound" class="btn small ghost" title="Sonido"></button>
   <button id="btn-full" class="btn small ghost hidden" title="Pantalla completa"></button>
   <button id="btn-settings" class="btn small ghost" title="Ajustes"></button>
+  <a class="btn small ghost topbar-donate" href="https://ko-fi.com/alepablo12" target="_blank" rel="noopener noreferrer">Donar</a>
   <button id="btn-logout" class="btn small ghost">Salir</button>
 </div>
 <div id="sound-panel" class="box sound-panel hidden"></div>
@@ -496,7 +504,7 @@
   <div class="box wide card-collection-app">
     <div class="row between"><h2>Colección de cartas</h2><button class="btn small ghost" data-back>Volver</button></div>
     <div class="row cards-tabs">
-      <button class="btn small" data-card-view="pack" aria-pressed="true">Sobre básico</button>
+      <button class="btn small" data-card-view="pack" aria-pressed="true">Sobres</button>
       <button class="btn small ghost" data-card-view="collection" aria-pressed="false">Colección</button>
     </div>
     <div id="card-pack-view"></div>

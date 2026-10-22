@@ -6,9 +6,21 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
-  { d: '2026-10-21', title: ['Colección clásica de cartas', 'Classic Card Collection'], new: [
-    ['Añadimos ilustraciones de cartas clásicas a la colección de 69 Pokémon y a los sobres. Abre sobres con monedas y tickets, reúne fragmentos para desbloquear personajes y recibe monedas por los duplicados. La colección se guarda y sincroniza con tu partida.',
-     'Classic card illustrations are now featured in the 69-Pokémon collection and on its packs. Open packs with coins and tickets, collect fragments to unlock characters, and receive coins for duplicates. The collection is saved and synced with your game.']
+  { d: '2026-10-22', title: ['Nuevo menú principal', 'New Main Menu'], new: [
+    ['Rediseñamos el menú con navegación lateral, detalles de cada sección, estadísticas reales de la partida y la ficha de tu compañero. Los botones principales mantienen sus acciones y también puedes recorrerlos con las flechas del teclado.',
+     'We redesigned the menu with side navigation, section details, real run statistics and your partner’s profile. Main buttons keep their existing actions, and you can also navigate them with the arrow keys.']
+  ] },
+  { d: '2026-10-22', title: ['Barra superior más clara', 'Clearer Top Bar'], chg: [
+    ['Los botones transparentes ahora tienen texto claro; añadimos Donar junto a Ajustes y quitamos el subtítulo «Mundo Misterioso» del logo.',
+     'Transparent buttons now use light text; Donar is next to Settings, and the “Mysterious Dungeon” subtitle has been removed from the logo.']
+  ] },
+  { d: '2026-10-22', title: ['Nuevas texturas y tema claro', 'New Textures and Light Theme'], chg: [
+    ['Renovamos las texturas del pasto, el agua, la tierra y los árboles del mundo, y cambiamos la tipografía y los colores de los menús a un tema claro inspirado en el ejemplo.',
+     'We refreshed the world’s grass, water, dirt and tree textures, and updated menu typography and colors to a light theme inspired by the example.']
+  ] },
+  { d: '2026-10-22', title: ['Colección Cute y fragmentos de cartas', 'Cute Collection and Card Fragments'], new: [
+    ['Añadimos el sobre Colección Cute con tres cartas ilustradas nuevas de Bulbasaur, Charmander y Squirtle. Ahora cada carta recibe sus propios fragmentos aunque ya tengas desbloqueado al Pokémon; al completarla desbloqueas al Pokémon si aún no lo tienes. Las cartas completadas repetidas dan monedas. La apertura ahora ocupa el primer plano con un ambiente misterioso, animación y sonido.',
+     'The Cute Collection pack adds three new illustrated cards for Bulbasaur, Charmander and Squirtle. Cards now grant their own fragments even if you already have the Pokémon unlocked; completing a card unlocks the Pokémon if you do not own it yet. Repeats of completed cards grant coins. Pack openings now take over the foreground with a mysterious atmosphere, animation and sound.']
   ] },
   { d: '2026-10-21', title: ['Regalar objetos en cooperativo', 'Share Items in Co-op'], new: [
     ['En multijugador, cuando ya llevas un objeto puedes enviar el nuevo a cualquiera de tus compañeros conectados en lugar de reemplazar el tuyo o dejarlo pasar.',

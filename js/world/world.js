@@ -592,6 +592,10 @@ G.World = (() => {
     TS, CW, reset, setBiome, biomeName, liquidKind, liquidEffect, walkable,
     kindAt, isWall, isLiquid, isFree, collide, projectileBlock, propsInCircle, nearestBreakable,
     damageProp, breakAt, specialsNear, update,
+    invalidateTerrainTextures() {
+      images.clear();
+      if (fade) fade.images.clear();
+    },
     breakProp(p) { if (!broken.has(p.tx + ',' + p.ty)) destroyProp(p); },
     /** Arena de la grieta: { tx, ty, r } (en tiles) o null. */
     setArena(a) {

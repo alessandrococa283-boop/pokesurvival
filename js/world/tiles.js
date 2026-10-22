@@ -170,6 +170,46 @@ G.Tiles = (() => {
   }
 
   const H = (x, y, s) => G.U.hash(x, y, s);
+  const TEXTURES = Object.create(null);
+  let treeTexture = null;
+
+  function invalidateTextures() {
+    clearProps();
+    if (G.World && typeof G.World.invalidateTerrainTextures === 'function')
+      G.World.invalidateTerrainTextures();
+  }
+
+  function loadTexture(name, file) {
+    const image = new Image();
+    image.onload = () => {
+      const pattern = document.createElement('canvas');
+      pattern.width = pattern.height = T;
+      const patternCtx = pattern.getContext('2d', { willReadFrequently: true });
+      patternCtx.imageSmoothingEnabled = false;
+      patternCtx.drawImage(image, 0, 0, T, T);
+      const pixels = patternCtx.getImageData(0, 0, T, T);
+      TEXTURES[name] = new Uint32Array(pixels.data.buffer);
+      if (name === 'tree') {
+        treeTexture = document.createElement('canvas');
+        treeTexture.width = 32;
+        treeTexture.height = 40;
+        const treeCtx = treeTexture.getContext('2d');
+        treeCtx.imageSmoothingEnabled = false;
+        treeCtx.drawImage(image, 0, 8, 32, 32);
+      }
+      invalidateTextures();
+    };
+    image.onerror = () => console.error(`[Terreno] No se pudo cargar assets/terrain/${file}`);
+    image.src = `/assets/terrain/${file}`;
+  }
+
+  function textureColor(name, x, y, base, amount) {
+    const pixels = TEXTURES[name];
+    if (!pixels) return base;
+    const texture = pixels[(y & (T - 1)) * T + (x & (T - 1))];
+    const channel = (shift) => Math.round(((base >>> shift) & 255) * (1 - amount) + ((texture >>> shift) & 255) * amount);
+    return ((channel(24) << 24) | (channel(16) << 16) | (channel(8) << 8) | channel(0)) >>> 0;
+  }
 
   // ---------------- chunk de suelo ----------------
 
@@ -213,6 +253,7 @@ G.Tiles = (() => {
     for (const k of ['speck', 'light', 'wallLight', 'wallEdge', 'wallFaceDark', 'liq', 'liqDeep', 'foam', 'shore'])
       C[k] = pack(B[k]);
     C.liqLight = mixPack(B.liq, B.foam, 0.28);
+    C.textureWater = B.liquid === 'water';
 
     const tx0 = cx * n, ty0 = cy * n;
     const dirtAt = dirtMask(tx0 * T, ty0 * T, n * T, dirtField, seed);
@@ -251,6 +292,7 @@ G.Tiles = (() => {
         // Borde de la tierra: labio oscuro arriba, hierba que la invade abajo.
         if (dirt && !dirtAt(lx, ly - 1)) col = C.speck;
         else if (!dirt && dirtAt(lx, ly - 1) && r < 0.5) col = C.light;
+        col = textureColor(dirt ? 'dirt' : 'grass', gx, gy, col, dirt ? 0.38 : 0.3);
         P.set(ox + x, oy + y, col);
       }
     }
@@ -350,6 +392,8 @@ G.Tiles = (() => {
         // Olas sueltas: rayitas horizontales de 3 px, pocas.
         if (d >= 3 && H(gx >> 2, gy, 33) < 0.045 && (gx & 3) !== 3) col = C.liqLight;
         if (d >= 3 && H(gx, gy, 34) < 0.004) col = C.foam;
+        if (C.textureWater && d >= 2)
+          col = textureColor('water', gx, gy, col, 0.72);
         P.set(ox + x, oy + y, col);
       }
     }
@@ -362,7 +406,11 @@ G.Tiles = (() => {
   function propSprite(bi, type, variant = 0) {
     const k = bi + '/' + type + '/' + variant;
     let cv = propCache.get(k);
-    if (!cv) { cv = PAINT[type](BIOMES[bi], variant); propCache.set(k, cv); }
+    if (!cv) {
+      cv = type === 'tree' && BIOMES[bi].prop === 'tree' && treeTexture
+        ? treeTexture : PAINT[type](BIOMES[bi], variant);
+      propCache.set(k, cv);
+    }
     return cv;
   }
 
@@ -625,6 +673,11 @@ G.Tiles = (() => {
   };
 
   function clearProps() { propCache.clear(); }
+
+  loadTexture('grass', 'pasto.png');
+  loadTexture('water', 'agua.png');
+  loadTexture('dirt', 'tierra.png');
+  loadTexture('tree', 'arbol.png');
 
   return { T, BIOMES, NORMAL, ARENA, ARENA_THEMES, ARENA_TYPES, paintChunk, propSprite, clearProps,
            /** Índice de bioma de la arena de un tipo. */

@@ -34,13 +34,19 @@ assert.deepEqual(Object.values(G.CardSystem.CONFIG.fragmentsRequiredByRarity), [
 assert.equal(G.CardSystem.probabilityRows().reduce((n, row) => n + row.weight, 0), 100);
 assert.equal(G.CardSystem.probabilityRows().reduce((n, row) => n + row.actualWeight, 0), 100);
 assert.equal(G.CardSystem.unmatched.length, 0, `Sin asociación: ${G.CardSystem.unmatched.join(', ')}`);
-assert.equal(new Set(G.CardSystem.catalog.map(card => card.id)).size, G.CardSystem.catalog.length);
+assert.equal(new Set(G.CardSystem.catalog.map(card => card.collectionKey)).size, G.CardSystem.catalog.length);
 for (const card of G.CardSystem.catalog) {
   assert.ok(G.DEX_BY[card.id], `No existe el Pokémon ${card.id}`);
-  assert.equal(Object.hasOwn(card, 'image'), false, 'La colección debe usar sprites del juego, no imágenes de cartas externas.');
+  assert.ok(fs.existsSync(path.join(root, card.image)), `Falta la imagen ${card.image}`);
 }
 for (const variant of G.CardSystem.CONFIG.pack.variants)
-  assert.ok(G.DEX_BY[variant.dex], `No existe el sprite del sobre ${variant.id}`);
+  assert.ok(fs.existsSync(path.join(root, variant.image)), `Falta el sobre ${variant.id}`);
+assert.equal(G.CardSystem.catalog.filter(card => card.pool === 'classic').length, 69);
+assert.deepEqual(
+  G.CardSystem.catalog.filter(card => card.pool === 'cute').map(card => card.collectionKey),
+  ['cute-1', 'cute-4', 'cute-7']
+);
+assert.equal(G.CardSystem.probabilityRows('cute').reduce((n, row) => n + row.count, 0), 3);
 
 const save = G.DB.save;
 save.coins = 299;
@@ -111,4 +117,35 @@ assert.equal(duplicate.duplicate, true);
 assert.equal(save.coins, beforeDuplicate - 300 + G.CardSystem.CONFIG.duplicateCoinsByRarity[duplicate.rarity]);
 assert.equal(save.tickets.t1, 7);
 
-console.log(`OK: ${G.CardSystem.catalog.length} Pokémon; probabilidades, costes, fragmentos, idempotencia, desbloqueo y duplicados verificados.`);
+const cuteCard = G.CardSystem.catalog.find(card => card.pool === 'cute');
+assert.ok(cuteCard, 'Debe existir una carta de Colección Cute.');
+save.owned[cuteCard.id] = { at: Date.now(), from: 'already-unlocked' };
+save.coins = 5000;
+save.tickets.t1 = 30;
+const rarityPrefix = G.CardSystem.CONFIG.rarityRates
+  .filter(row => row.rarity < cuteCard.rarity)
+  .reduce((sum, row) => sum + row.weight, 0);
+const fixedCuteRng = () => {
+  let call = 0;
+  return () => call++ ? 0 : (rarityPrefix + .001) / 100;
+};
+let cuteResult;
+let cuteOperation = 0;
+while (!cuteResult || !cuteResult.completed) {
+  cuteResult = G.CardSystem.open({
+    rng: fixedCuteRng(),
+    packId: 'cute',
+    operationId: `owned-cute-${cuteOperation++}`
+  });
+  assert.equal(cuteResult.cardId, cuteCard.id);
+  assert.equal(cuteResult.duplicate, false);
+}
+assert.equal(cuteResult.unlocked, false);
+assert.equal(save.owned[cuteCard.id].from, 'already-unlocked');
+assert.equal(save.cardCollection.fragments[cuteCard.collectionKey], cuteCard.fragmentsRequired);
+assert.equal(save.cardCollection.discovered[cuteCard.collectionKey], true);
+assert.equal(cuteResult.completed, true);
+const classicSamePokemon = G.CardSystem.catalog.find(card => card.pool === 'classic' && card.id === cuteCard.id);
+assert.equal(save.cardCollection.fragments[classicSamePokemon.collectionKey] || 0, 0);
+
+console.log(`OK: ${G.CardSystem.catalog.length} cartas; fragmentos aun con el Pokémon desbloqueado, sobres Cute, costes, idempotencia y duplicados verificados.`);

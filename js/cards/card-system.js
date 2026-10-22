@@ -12,9 +12,10 @@ G.CardSystem = (() => {
       cost: { coins: 300, tickets: 3 },
       rewards: 1,
       variants: [
-        { id: 'bulbasaur', name: 'Bosque', dex: 1, color: '#38765a', image: 'assets/cards/packs/venusaur.png' },
-        { id: 'charmander', name: 'Llama', dex: 4, color: '#a95136', image: 'assets/cards/packs/charizard.png' },
-        { id: 'squirtle', name: 'Océano', dex: 7, color: '#3478a2', image: 'assets/cards/packs/blastoise.png' }
+        { id: 'bulbasaur', name: 'Bosque', dex: 1, pool: 'classic', color: '#38765a', image: 'assets/cards/packs/venusaur.png' },
+        { id: 'charmander', name: 'Llama', dex: 4, pool: 'classic', color: '#a95136', image: 'assets/cards/packs/charizard.png' },
+        { id: 'squirtle', name: 'Océano', dex: 7, pool: 'classic', color: '#3478a2', image: 'assets/cards/packs/blastoise.png' },
+        { id: 'cute', name: 'Colección Cute', pool: 'cute', color: '#e99d79', image: 'assets/cards/packs/Coleccion C.jpg' }
       ]
     },
     rarityRates: G.Acquisition.gacha.rates.map(([rarity, weight]) => ({ rarity, weight })),
@@ -27,8 +28,15 @@ G.CardSystem = (() => {
     abra:'abra-base-set-bs-43-325x447.jpg',alakazam:'alakazam-base-set-bs-1.jpg',arcanine:'arcanine-base-set-bs-23-325x447.jpg',beedrill:'beedrill-base-set-bs-17-325x447.jpg',blastoise:'blastoise-base-set-bs-2-325x447.jpg',bulbasaur:'bulbasaur-base-set-bs-44-325x447.jpg',caterpie:'caterpie-base-set-bs-45-325x447.jpg',chansey:'chansey-base-set-bs-3-325x447.jpg',charizard:'charizard-base-set-bs-4-325x447.jpg',charmander:'charmander-base-set-bs-46-325x447.jpg',charmeleon:'charmeleon-base-set-bs-24-325x447.jpg',clefairy:'clefairy-base-set-bs-5-325x447.jpg',dewgong:'dewgong-base-set-bs-25-325x447.jpg',diglett:'diglett-base-set-bs-47-325x447.jpg',doduo:'doduo-base-set-bs-48-325x447.jpg',dragonair:'dragonair-base-set-bs-18-325x447.jpg',dratini:'dratini-base-set-bs-26-325x447.jpg',drowzee:'drowzee-base-set-bs-49-325x447.jpg',dugtrio:'dugtrio-base-set-bs-19-325x447.jpg',electabuzz:'electabuzz-base-set-bs-20-325x447.jpg',electrode:'electrode-base-set-bs-21-325x447.jpg',farfetchd:'farfetchd-base-set-bs-27-325x447.jpg',gastly:'gastly-base-set-bs-50-325x447.jpg',growlithe:'growlithe-base-set-bs-28-325x447.jpg',gyarados:'gyarados-base-set-bs-6-325x447.jpg',haunter:'haunter-base-set-bs-29-325x447.jpg',hitmonchan:'hitmonchan-base-set-bs-7-325x447.jpg',ivysaur:'ivysaur-base-set-bs-30-325x447.jpg',jynx:'jynx-base-set-bs-31-325x447.jpg',kadabra:'kadabra-base-set-bs-32-325x447.jpg',kakuna:'kakuna-base-set-bs-33-325x447.jpg',koffing:'koffing-base-set-bs-51-325x447.jpg',machamp:'machamp-base-set-bs-8-325x447.jpg',machoke:'machoke-base-set-bs-34-325x447.jpg',machop:'machop-base-set-bs-52-325x447.jpg',magikarp:'magikarp-base-set-bs-35-325x447.jpg',magmar:'magmar-base-set-bs-36-325x447.jpg',magnemite:'magnemite-base-set-bs-53-325x447.jpg',magneton:'magneton-base-set-bs-9-325x447.jpg',metapod:'metapod-base-set-bs-54-325x447.jpg',mewtwo:'mewtwo-base-set-bs-10-325x447.jpg',nidoking:'nidoking-base-set-bs-11-325x447.jpg',nidoranmale:'nidoran-male-base-set-bs-55-325x447.jpg',nidorino:'nidorino-base-set-bs-37-325x447.jpg',ninetales:'ninetales-base-set-bs-12-325x447.jpg',onix:'onix-base-set-bs-56-325x447.jpg',pidgeotto:'pidgeotto-base-set-bs-22-325x447.jpg',pidgey:'pidgey-base-set-bs-57-325x447.jpg',pikachu:'pikachu-base-set-bs-58-325x447.jpg',poliwag:'poliwag-base-set-bs-59-325x447.jpg',poliwhirl:'poliwhirl-base-set-bs-38-325x447.jpg',poliwrath:'poliwrath-base-set-bs-13-325x447.jpg',ponyta:'ponyta-base-set-bs-60-325x447.jpg',porygon:'porygon-base-set-bs-39-325x447.jpg',raichu:'raichu-base-set-bs-14-325x447.jpg',raticate:'raticate-base-set-bs-40-325x447.jpg',rattata:'rattata-base-set-bs-61-325x447.jpg',sandshrew:'sandshrew-base-set-bs-62-325x447.jpg',seel:'seel-base-set-bs-41-325x447.jpg',squirtle:'squirtle-base-set-bs-63-325x447.jpg',starmie:'starmie-base-set-bs-64-325x447.jpg',staryu:'staryu-base-set-bs-65-325x447.jpg',tangela:'tangela-base-set-bs-66-325x447.jpg',venusaur:'venusaur-base-set-bs-15-325x447.jpg',voltorb:'voltorb-base-set-bs-67-325x447.jpg',vulpix:'vulpix-base-set-bs-68-325x447.jpg',wartortle:'wartortle-base-set-bs-42-325x447.jpg',weedle:'weedle-base-set-bs-69-325x447.jpg',zapdos:'zapdos-base-set-bs-16-325x447.jpg'
   };
   const normalizeName = name => String(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const CUTE_CARDS = [
+    { dex: 1, key: 'cute-1', image: 'assets/cards/Coleccion Cute/01.jpg' },
+    { dex: 4, key: 'cute-4', image: 'assets/cards/Coleccion Cute/04.jpg' },
+    { dex: 7, key: 'cute-7', image: 'assets/cards/Coleccion Cute/07.jpg' }
+  ];
   const catalog = CARD_DEXES.map(id => G.DEX_BY[id]).filter(Boolean).map(mon => ({
     id: mon.dex,
+    collectionKey: String(mon.dex),
+    pool: 'classic',
     name: mon.name,
     pokedex: mon.dex,
     rarity: mon.rarity,
@@ -38,7 +46,24 @@ G.CardSystem = (() => {
     enabled: !mon.leg,
     availableInPacks: !mon.leg,
     weight: null
-  }));
+  })).concat(CUTE_CARDS.map(({ dex, key, image }) => {
+    const mon = G.DEX_BY[dex];
+    if (!mon) return null;
+    return {
+      id: mon.dex,
+      collectionKey: key,
+      pool: 'cute',
+      name: mon.name,
+      pokedex: mon.dex,
+      rarity: mon.rarity,
+      types: mon.types,
+      image,
+      fragmentsRequired: CONFIG.fragmentsRequiredByRarity[mon.rarity],
+      enabled: !mon.leg,
+      availableInPacks: !mon.leg,
+      weight: null
+    };
+  }).filter(Boolean));
 
   function state() {
     const save = G.DB.save;
@@ -85,24 +110,29 @@ G.CardSystem = (() => {
     return pick(CONFIG.rarityRates, row => row.weight, rng).rarity;
   }
 
-  function cardFor(rarity, rng) {
-    let eligible = catalog.filter(card => card.enabled && card.availableInPacks && card.rarity === rarity);
+  function packById(packId) {
+    return CONFIG.pack.variants.find(pack => pack.id === packId) || CONFIG.pack.variants[0];
+  }
+
+  function cardFor(rarity, rng, pool) {
+    let eligible = catalog.filter(card => card.pool === pool && card.enabled && card.availableInPacks && card.rarity === rarity);
     let actualRarity = rarity;
     if (!eligible.length) {
       const available = CONFIG.rarityRates.map(row => row.rarity)
-        .filter(value => catalog.some(card => card.enabled && card.availableInPacks && card.rarity === value));
+        .filter(value => catalog.some(card => card.pool === pool && card.enabled && card.availableInPacks && card.rarity === value));
       const fallback = available.sort((a, b) => Math.abs(a - rarity) - Math.abs(b - rarity) || a - b)[0];
       if (fallback == null) throw Error('No hay cartas disponibles; el sobre no se cobró.');
       actualRarity = fallback;
-      eligible = catalog.filter(card => card.enabled && card.availableInPacks && card.rarity === fallback);
+      eligible = catalog.filter(card => card.pool === pool && card.enabled && card.availableInPacks && card.rarity === fallback);
     }
     return { card: pick(eligible, card => Number.isFinite(card.weight) && card.weight > 0 ? card.weight : 1, rng), rarity: actualRarity };
   }
 
-  function probabilityRows() {
+  function probabilityRows(packId) {
+    const pool = packById(packId).pool;
     const rows = CONFIG.rarityRates.map(row => ({
       ...row,
-      count: catalog.filter(card => card.enabled && card.availableInPacks && card.rarity === row.rarity).length
+      count: catalog.filter(card => card.pool === pool && card.enabled && card.availableInPacks && card.rarity === row.rarity).length
     }));
     const effective = Object.fromEntries(rows.map(row => [row.rarity, 0]));
     for (const row of rows) {
@@ -118,7 +148,7 @@ G.CardSystem = (() => {
   }
 
   let busy = false;
-  function open({ rng = Math.random, operationId = makeOperationId() } = {}) {
+  function open({ rng = Math.random, operationId = makeOperationId(), packId } = {}) {
     if (busy) throw Error('La apertura ya está en curso.');
     busy = true;
     try {
@@ -132,10 +162,11 @@ G.CardSystem = (() => {
         throw Error('Necesitas 300 monedas y 3 tickets para abrir este sobre.');
 
       const drawnRarity = selectRarity(rng);
-      const picked = cardFor(drawnRarity, rng);
+      const pack = packById(packId);
+      const picked = cardFor(drawnRarity, rng, pack.pool);
       const card = picked.card;
-      const previous = Number(collection.fragments[card.id] || 0);
-      const duplicate = !!save.owned[card.id];
+      const previous = Math.min(card.fragmentsRequired, Math.max(0, Number(collection.fragments[card.collectionKey] || 0)));
+      const duplicate = previous >= card.fragmentsRequired;
       const reward = duplicate ? 0 : CONFIG.fragmentsByRarity[card.rarity];
       const next = duplicate ? previous : Math.min(card.fragmentsRequired, previous + reward);
       const completed = !duplicate && previous < card.fragmentsRequired && next >= card.fragmentsRequired;
@@ -144,6 +175,7 @@ G.CardSystem = (() => {
       const result = {
         operationId,
         cardId: card.id,
+        collectionKey: card.collectionKey,
         rarity: card.rarity,
         fragments: reward,
         before: previous,
@@ -159,8 +191,8 @@ G.CardSystem = (() => {
       save.tickets.t1 -= CONFIG.pack.cost.tickets;
       if (duplicate) save.coins += duplicateCoins;
       else {
-        collection.fragments[card.id] = next;
-        collection.discovered[card.id] = true;
+        collection.fragments[card.collectionKey] = next;
+        collection.discovered[card.collectionKey] = true;
       }
       if (unlocked) G.DB.grant(card.id, 'card-fragments');
       collection.operations[operationId] = result;
@@ -184,9 +216,9 @@ G.CardSystem = (() => {
     const collection = state();
     return catalog.map(card => ({
       ...card,
-      fragments: collection.fragments[card.id] || 0,
+      fragments: collection.fragments[card.collectionKey] || 0,
       unlocked: !!G.DB.save.owned[card.id],
-      discovered: !!collection.discovered[card.id]
+      discovered: !!collection.discovered[card.collectionKey]
     }));
   }
 
@@ -227,7 +259,7 @@ G.CardCollectionUI = (() => {
     const wrap = document.createElement('span');
     wrap.className = 'card-art';
     wrap.style.setProperty('--fill', `${Math.max(0, Math.min(1, progress)) * 100}%`);
-    const card = G.CardSystem.catalog.find(item => item.id === dex);
+    const card = typeof dex === 'object' ? dex : G.CardSystem.catalog.find(item => item.id === dex);
     if (!card || !card.image.endsWith('.jpg')) {
       const fallback = sprite(dex, width, height);
       fallback.className = 'card-art-fill';
@@ -295,25 +327,26 @@ G.CardCollectionUI = (() => {
     const details = document.createElement('div');
     details.className = 'card-pack-details';
     details.append(
-      text('h3', config.pack.name),
+      text('h3', selected.pool === 'cute' ? 'Sobre de Colección Cute' : config.pack.name),
       text('p', `Diseño ${selected.name} · Una carta · ${config.pack.cost.coins} monedas + ${config.pack.cost.tickets} tickets`),
       text('p', `Saldo: ${save.coins.toLocaleString('es')} monedas · ${save.tickets.t1} tickets`)
     );
     const probabilities = document.createElement('div');
     probabilities.className = 'card-rates';
-    for (const row of G.CardSystem.probabilityRows()) {
+    for (const row of G.CardSystem.probabilityRows(selected.id)) {
       probabilities.appendChild(text('span', `${row.name}: ${row.actualWeight}%${row.count ? '' : ' (respaldo)'}`));
     }
     const button = text('button', busy ? 'Abriendo…' : 'Abrir sobre', 'btn gold');
     button.type = 'button';
     button.disabled = busy;
-    button.onclick = () => {
+    button.onclick = async () => {
       if (busy) return;
       busy = true;
       button.disabled = true;
       $('card-message').replaceChildren();
       try {
-        showReward(G.CardSystem.open());
+        const result = G.CardSystem.open({ packId: selected.id });
+        await showReward(result);
       } catch (error) {
         $('card-message').textContent = error.message;
         G.UI.toast(error.message);
@@ -328,22 +361,61 @@ G.CardCollectionUI = (() => {
   }
 
   function showReward(result) {
-    const card = G.CardSystem.catalog.find(entry => entry.id === result.cardId);
+    const card = G.CardSystem.catalog.find(entry => entry.collectionKey === result.collectionKey)
+      || G.CardSystem.catalog.find(entry => entry.id === result.cardId);
     if (!card) throw new Error('No se encontró la carta obtenida.');
-    const reward = document.createElement('div');
-    reward.className = 'panel card-reward';
-    reward.append(artwork(card.id, result.after / result.required, 110, 126));
+    const overlay = document.createElement('dialog');
+    overlay.className = 'card-opening-overlay';
+    overlay.setAttribute('aria-label', `Carta obtenida: ${card.name}`);
+    const scene = document.createElement('div');
+    scene.className = 'card-opening-scene';
+    const aura = document.createElement('span');
+    aura.className = 'card-opening-aura';
+    aura.setAttribute('aria-hidden', 'true');
+    const packImage = document.createElement('img');
+    packImage.src = G.CardSystem.CONFIG.pack.variants.find(pack => pack.pool === card.pool)?.image || '';
+    packImage.alt = '';
+    packImage.className = 'card-opening-pack';
+    const reveal = document.createElement('div');
+    reveal.className = 'card-opening-reveal';
+    reveal.append(artwork(card, result.after / result.required, 220, 300));
     const details = document.createElement('div');
+    details.className = 'card-opening-details';
     details.append(
-      text('h3', `${card.name} · ${G.CardSystem.rarityNames[result.rarity]}`),
+      text('h2', `${card.name} · ${G.CardSystem.rarityNames[result.rarity]}`),
       text('p', result.duplicate
-        ? `Duplicado: +${result.duplicateCoins} monedas.`
-        : `+${result.fragments} fragmentos · ${result.before} → ${result.after}/${result.required}.`)
+        ? `Carta completa: +${result.duplicateCoins} monedas.`
+        : `+${result.fragments} ${result.fragments === 1 ? 'fragmento' : 'fragmentos'} · ${result.after}/${result.required}.`)
     );
     if (result.completed) details.appendChild(text('strong', '¡Carta completada!'));
-    if (result.unlocked) details.appendChild(text('strong', '¡Personaje desbloqueado!'));
-    reward.appendChild(details);
-    $('card-message').replaceChildren(reward);
+    if (result.unlocked) details.appendChild(text('strong', '¡Pokémon desbloqueado!'));
+    const close = text('button', 'Cerrar', 'btn small ghost card-opening-close');
+    close.type = 'button';
+    const countdown = text('p', 'Esta ventana se cerrará automáticamente.', 'card-opening-countdown');
+    scene.append(aura, packImage, reveal, details, close, countdown);
+    overlay.appendChild(scene);
+    document.body.appendChild(overlay);
+    overlay.showModal();
+    G.Audio.sfx('chest');
+    requestAnimationFrame(() => overlay.classList.add('is-open'));
+    const revealSound = setTimeout(() => G.Audio.sfx('reveal', { rarity: result.rarity }), 520);
+    return new Promise(resolve => {
+      let closed = false;
+      const finish = () => {
+        if (closed) return;
+        closed = true;
+        clearTimeout(revealSound);
+        clearTimeout(autoClose);
+        overlay.close();
+        overlay.remove();
+        resolve();
+      };
+      close.onclick = finish;
+      overlay.onclick = event => { if (event.target === overlay) finish(); };
+      overlay.oncancel = event => { event.preventDefault(); finish(); };
+      const autoClose = setTimeout(finish, 5000);
+      close.focus();
+    });
   }
 
   function matches(card) {
@@ -361,7 +433,7 @@ G.CardCollectionUI = (() => {
     root.replaceChildren();
     const layout = document.createElement('div');
     layout.className = 'card-detail-layout';
-    const art = artwork(card.id, ratio, 230, 250);
+    const art = artwork(card, ratio, 230, 250);
     art.classList.add('card-detail-art');
     const details = document.createElement('div');
     const name = card.discovered ? card.name : 'Carta desconocida';
@@ -406,7 +478,7 @@ G.CardCollectionUI = (() => {
       button.setAttribute('aria-label', `${card.discovered ? card.name : 'Carta desconocida'}, ${card.fragments} de ${card.fragmentsRequired} fragmentos`);
       const name = card.discovered ? card.name : '???';
       button.append(
-        artwork(card.id, card.fragments / card.fragmentsRequired, 130, 142),
+        artwork(card, card.fragments / card.fragmentsRequired, 130, 142),
         text('b', name),
         text('span', G.CardSystem.rarityNames[card.rarity]),
         text('span', `${card.fragments}/${card.fragmentsRequired}`)
